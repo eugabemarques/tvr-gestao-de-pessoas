@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TOVERI - Gestão de Pessoas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef2f5;--panel:#fff;--ink:#12263a;--mute:#5b6f80;--line:#d3dde5;--sea:#0e5c73;--rest:#cfe3ea;--ok:#2e8b57;--warn:#b7791f;--bad:#c23b3b;--okbg:#e0f2e8;--warnbg:#fbefd5;--badbg:#f9dfdf;--accent-ink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a26;--panel:#152636;--ink:#e6eef4;--mute:#92a6b6;--line:#26405a;--sea:#4fb3cf;--rest:#24475a;--ok:#5fcf93;--warn:#f0b955;--bad:#f07b7b;--okbg:#17362a;--warnbg:#3a2f15;--badbg:#3d1f1f;--accent-ink:#08202b}}
+:root[data-theme="dark"]{--bg:#0d1a26;--panel:#152636;--ink:#e6eef4;--mute:#92a6b6;--line:#26405a;--sea:#4fb3cf;--rest:#24475a;--ok:#5fcf93;--warn:#f0b955;--bad:#f07b7b;--okbg:#17362a;--warnbg:#3a2f15;--badbg:#3d1f1f;--accent-ink:#08202b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Public Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque","Public Sans",sans-serif;margin:0;line-height:1.15}
+main{max-width:1080px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-size:30px;font-weight:700}
+.sub{color:var(--mute);margin:4px 0 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
+h2{font-size:20px;font-weight:700;margin-bottom:14px}
+.reg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:24px}
+@media(max-width:760px){.reg{grid-template-columns:1fr}}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:12px}
+select,input{display:block;width:100%;margin-top:4px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+button{font:600 15px "Public Sans",sans-serif;padding:11px 18px;border:0;border-radius:6px;background:var(--sea);color:var(--accent-ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line);font-weight:500;padding:7px 12px;font-size:13px}
+.res h3{font-size:34px;font-weight:700;color:var(--sea)}
+.res p{margin:2px 0 14px;color:var(--mute)}
+.track{display:flex;height:34px;border-radius:6px;overflow:hidden;margin:10px 0 6px;font-size:13px;font-weight:600}
+.track div{display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden}
+.t1{background:var(--sea);color:var(--accent-ink)}.t2{background:var(--rest);color:var(--ink)}
+.dates{display:flex;justify-content:space-between;color:var(--mute);font-size:13px;gap:8px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.facts div{border-left:3px solid var(--sea);padding-left:10px}
+.facts b{display:block;font-size:16px}.facts span{color:var(--mute);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat b{font:700 28px "Bricolage Grotesque",sans-serif;display:block}
+.stat span{color:var(--mute);font-size:13px}
+.stat.bad b{color:var(--bad)}.stat.warn b{color:var(--warn)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th{text-align:left;font-weight:600;font-size:13px;color:var(--mute);padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:600;white-space:nowrap}
+.c-ok{background:var(--okbg);color:var(--ok)}.c-warn{background:var(--warnbg);color:var(--warn)}.c-bad{background:var(--badbg);color:var(--bad)}.c-sea{background:var(--rest);color:var(--sea)}
+.bar{position:relative;height:10px;border-radius:5px;background:linear-gradient(to right,var(--sea) 50%,var(--rest) 50%);min-width:110px}
+.bar i{position:absolute;top:-3px;width:4px;height:16px;border-radius:2px;background:var(--ink);transform:translateX(-2px)}
+.mute{color:var(--mute);font-size:13px}
+.alert{display:flex;gap:10px;padding:10px 12px;border-radius:6px;margin-bottom:8px;background:var(--badbg);border-left:4px solid var(--bad)}
+.alert.w{background:var(--warnbg);border-color:var(--warn)}
+.empty{color:var(--mute)}
+.dlg{margin:auto;width:min(620px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;color:var(--ink);background:var(--panel)}
+.dlg::backdrop{background:rgba(10,20,30,.55)}
+.dlg .reg{grid-template-columns:1fr;gap:16px}
+.row{display:flex;gap:10px;align-items:center}
+.gcols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:end}
+.gcol{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:210px;padding:10px 8px;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:8px;font-weight:500;font-size:13px;text-align:center}
+.gcol b{font:700 26px "Bricolage Grotesque",sans-serif}
+.gfill{display:block;width:60%;max-width:90px;border-radius:4px 4px 0 0}
+.g-bad .gfill{background:var(--bad)}.g-warn .gfill{background:var(--warn)}.g-ok .gfill{background:var(--ok)}
+.gcol:hover,.gcol.on{background:var(--bg)}
+.gcol.on{border-color:var(--ink)}
+.bell{position:relative;background:transparent;color:var(--ink);border:1px solid var(--line);padding:7px 9px;line-height:0}
+.bell svg{width:20px;height:20px}
+.badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:var(--accent-ink);font:700 11px/18px "Public Sans",sans-serif;text-align:center}
+.alert.ok{background:var(--okbg);border-color:var(--ok)}
+.alert button{align-self:center;white-space:nowrap}
+details.done{margin-top:12px}
+details.done summary{cursor:pointer;color:var(--mute);margin-bottom:8px}
+[hidden]{display:none!important}
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.tabs button{background:transparent;color:var(--mute);border-radius:6px 6px 0 0;padding:10px 16px;border-bottom:3px solid transparent}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--sea)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media(max-width:560px){.g2{grid-template-columns:1fr}}
+.pf{display:grid;grid-template-columns:170px 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.anx{display:flex;align-items:center;gap:8px;margin-top:6px;font-weight:400;flex-wrap:wrap}
+.anx button{padding:4px 10px;font-size:13px}
+.anx span{color:var(--mute);font-size:13px;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><h1>TOVERI - Gestão de Pessoas</h1><p class="sub" id="hoje"></p></div>
+  <div class="row"><button class="bell" id="sino" type="button" aria-label="Avisos do sistema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="nbadge" hidden></span></button><button class="ghost" id="reset">Restaurar dados de exemplo</button></div>
+</header>
+<nav class="tabs" aria-label="Seções"><button type="button" data-tab="painel" aria-current="page">Painel</button><button type="button" data-tab="escala">Embarques</button><button type="button" data-tab="colab">Colaboradores</button></nav>
+
+<section class="panel" data-view="escala" aria-labelledby="t-reg">
+  <h2 id="t-reg">Registrar embarque</h2>
+  <div class="reg">
+    <div>
+      <label>Colaborador<select id="pessoa"></select></label>
+      <label>Data de embarque<input type="date" id="data"></label>
+      <label>Dias embarcados<input type="number" id="dias" min="1" max="120" value="42"></label>
+      <button id="salvar">Salvar registro</button>
+    </div>
+    <div class="res" aria-live="polite">
+      <h3 id="r-folga"></h3>
+      <p>dias de folga conquistados (1 dia de folga para cada dia embarcado)</p>
+      <div class="track" id="r-track"></div>
+      <div class="dates" id="r-dates"></div>
+      <div class="facts" id="r-facts"></div>
+    </div>
+  </div>
+</section>
+
+<dialog id="pdobra" class="panel dlg" aria-labelledby="t-dobra">
+  <h2 id="t-dobra">Adicionar dobra</h2>
+  <div class="reg">
+    <div>
+      <label>Colaborador embarcado<select id="dpessoa"></select></label>
+      <label>Dias de dobra<input type="number" id="ddias" min="1" max="60" value="7"></label>
+      <div class="row"><button id="dsalvar">Adicionar dobra</button><button class="ghost" id="dfechar" type="button">Cancelar</button></div>
+    </div>
+    <div class="res" aria-live="polite" id="dres"></div>
+  </div>
+</dialog>
+
+<div class="stats" id="stats" data-view="painel"></div>
+
+<dialog id="pavisos" class="panel dlg" aria-labelledby="t-al">
+  <h2 id="t-al">Avisos do sistema</h2>
+  <p class="mute">Cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias.</p>
+  <div id="alertas"></div>
+  <div class="row"><button class="ghost" id="afechar" type="button">Fechar</button></div>
+</dialog>
+
+<section class="panel" data-view="escala" aria-labelledby="t-eq">
+  <h2 id="t-eq">Equipe hoje</h2>
+  <div class="scroll"><table><thead><tr><th>Colaborador</th><th>Situação</th><th>Ciclo</th><th>Próximo embarque</th><th>Dobra</th></tr></thead><tbody id="equipe"></tbody></table></div>
+</section>
+
+<section class="panel" data-view="painel" aria-labelledby="t-cu">
+  <h2 id="t-cu">Cursos por validade</h2>
+  <div class="gcols" id="cgraf" role="group" aria-label="Cursos por situação"></div>
+  <p class="mute" id="cdica">Clique em uma coluna para ver os cursos.</p>
+  <div class="scroll" id="cdet" hidden><table><thead><tr><th>Curso</th><th>Colaborador</th><th>Validade</th><th>Situação</th></tr></thead><tbody id="cursos"></tbody></table></div>
+</section>
+<section class="panel" data-view="colab" aria-labelledby="t-co" hidden>
+  <div class="row" style="justify-content:space-between;flex-wrap:wrap;margin-bottom:14px">
+    <h2 id="t-co" style="margin:0">Colaboradores</h2>
+    <button id="novoc" type="button">Novo colaborador</button>
+  </div>
+  <label>Buscar<input type="search" id="busca" placeholder="Nome, cargo ou unidade" autocomplete="off"></label>
+  <div class="scroll"><table><thead><tr><th>Colaborador</th><th>Unidade</th><th>Situação</th><th>Cursos</th><th></th></tr></thead><tbody id="colabs"></tbody></table></div>
+</section>
+<dialog id="ppasta" class="panel dlg" aria-labelledby="t-pa">
+  <h2 id="t-pa">Pasta do colaborador</h2>
+  <div id="pbody"></div>
+  <div class="row" style="margin-top:14px"><button type="button" id="pficha">Baixar ficha (.txt)</button><button class="ghost" type="button" id="pfechar">Fechar</button></div>
+</dialog>
+<dialog id="pcolab" class="panel dlg" aria-labelledby="t-cd">
+  <h2 id="t-cd">Novo colaborador</h2>
+  <p class="mute">Protótipo: os dados ficam apenas neste navegador. Use informações fictícias nos testes.</p>
+  <label>Nome completo<input id="cnome" autocomplete="off"></label>
+  <div class="g2"><label>RG<input id="crg" autocomplete="off"></label><label>CPF<input id="ccpf" inputmode="numeric" autocomplete="off"></label></div>
+  <div class="g2"><label>Nº do passaporte<input id="cpass" autocomplete="off"></label><label>Setor<select id="csetor"><option value="">Escolha</option><option value="ambiental">Ambiental</option><option value="administrativo">Administrativo</option></select></label></div>
+  <div class="g2"><label>Nome da mãe<input id="cmae" autocomplete="off"></label><label>Nome do pai (opcional)<input id="cpai" autocomplete="off"></label></div>
+  <div class="g2"><label>E-mail<input type="email" id="cemail" autocomplete="off"></label><label>Celular<input type="tel" id="ccel" autocomplete="off"></label></div>
+  <label>Contato de emergência (nome e telefone)<input id="cemerg" autocomplete="off"></label>
+  <div class="g2"><label>Rua<input id="crua" autocomplete="off"></label><label>Número<input id="cnum" autocomplete="off"></label></div>
+  <div class="g2"><label>Bairro<input id="cbairro" autocomplete="off"></label><label>Cidade<input id="ccidade" autocomplete="off"></label></div>
+  <label>CEP<input id="ccep" inputmode="numeric" autocomplete="off"></label>
+  <label>Cargo<input id="ccargo" autocomplete="off"></label>
+  <label>Embarcação ou unidade<input id="cunid" autocomplete="off"></label>
+  <div id="cescala" hidden><p class="mute">Escala do setor ambiental: informe o embarque atual ou o próximo e os dias da escala.</p>
+  <label>Data do embarque atual ou do próximo<input type="date" id="cdata"></label>
+  <label>Dias da escala<input type="number" id="cdias" min="1" max="120" value="42"></label></div>
+  <input type="file" id="canexo" hidden accept=".pdf,.png,.jpg,.jpeg,.webp">
+  <label>Outros documentos (PDF ou imagem, até 1 MB cada)<input type="file" id="cdocs" multiple accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+  <div id="clistdocs" class="mute" style="margin-bottom:12px"></div>
+  <p id="cerro" role="alert" style="color:var(--bad);margin:0 0 10px;font-weight:600"></p>
+  <div class="row"><button id="csalvar" type="button">Salvar</button><button class="ghost" id="cfechar" type="button">Cancelar</button><button class="ghost" id="cremover" type="button" hidden>Remover</button></div>
+</dialog>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const DAY=864e5, KEY="escala42v1";
+const pad=n=>String(n).padStart(2,"0");
+const now=new Date();
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const toDay=s=>Math.floor(Date.parse(s+"T00:00:00Z")/DAY);
+const TODAY=toDay(iso(now));
+const fmt=n=>new Date(n*DAY).toLocaleDateString("pt-BR",{timeZone:"UTC",day:"2-digit",month:"2-digit",year:"numeric"});
+const fmtS=n=>new Date(n*DAY).toLocaleDateString("pt-BR",{timeZone:"UTC",day:"2-digit",month:"short"});
+const $=id=>document.getElementById(id);
+
+function seed(){
+  const T=TODAY;
+  return {
+    people:[
+      {id:1,name:"Ana Ribeiro",role:"Técnica de segurança",unit:"Plataforma P-1",embark:T-10,dias:42},
+      {id:2,name:"Bruno Almeida",role:"Eletricista",unit:"Plataforma P-1",embark:T-36,dias:42,dobra:7,base:42},
+      {id:3,name:"Carla Mendes",role:"Enfermeira",unit:"Embarcação Atlântico",embark:T-52,dias:42},
+      {id:4,name:"Diego Fontes",role:"Mecânico",unit:"Embarcação Atlântico",embark:T-80,dias:42},
+      {id:5,name:"Elisa Costa",role:"Marinheira",unit:"Embarcação Atlântico",embark:T-20,dias:42},
+      {id:6,name:"Fábio Nunes",role:"Soldador",unit:"Plataforma P-1",embark:T-60,dias:42}
+    ],
+    courses:[
+      [1,"BST – Segurança básica",T+300],[1,"HUET",T+40],[1,"NR-35 Trabalho em altura",T+20],
+      [2,"BST – Segurança básica",T+150],[2,"NR-10 Eletricidade",T-12],[2,"HUET",T+500],
+      [3,"BST – Segurança básica",T+80],[3,"HUET",T+25],[3,"NR-35 Trabalho em altura",T+400],
+      [4,"BST – Segurança básica",T+200],[4,"NR-33 Espaço confinado",T+60],[4,"HUET",T+35],
+      [5,"BST – Segurança básica",T+30],[5,"HUET",T+260],
+      [6,"BST – Segurança básica",T+90],[6,"NR-34 Trabalho a quente",T+10],[6,"HUET",T+310]
+    ].map(c=>({pid:c[0],name:c[1],valid:c[2]})),
+    log:[]
+  };
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+if(!S||!S.people)S=seed();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){return false}}
+
+function cycle(p){
+  const dob=p.dobra||0, base=p.base||42, A=p.dias+dob;
+  if(TODAY<p.embark)return{st:"future",next:p.embark,end:p.embark+A-1,days:p.embark-TODAY,pos:0,L:A,start:p.embark,first:true,dobra:dob};
+  const off=TODAY-p.embark, first=off<2*A;
+  const L=first?A:base, pos=first?off:(off-2*A)%(2*base), start=TODAY-pos;
+  const o={pos,L,start,first,dobra:first?dob:0,next:start+2*L,days:start+2*L-TODAY};
+  if(pos<L)return{...o,st:"aboard",day:pos+1,end:start+L-1};
+  return{...o,st:"rest",day:pos-L+1,end:start+2*L+base-1};
+}
+const person=id=>S.people.find(p=>p.id==id);
+function courseState(c){
+  const d=c.valid-TODAY;
+  if(d<0)return{k:"bad",t:"Vencido há "+(-d)+" dias"};
+  if(d<=90)return{k:"warn",t:"Vence em "+d+" dias"};
+  return{k:"ok",t:"Em dia"};
+}
+
+function renderResult(){
+  const d=toDay($("data").value||iso(now)), n=Math.max(1,parseInt($("dias").value)||0);
+  $("r-folga").textContent=n+" dias";
+  $("r-track").innerHTML='<div class="t1" style="flex:'+n+'">A bordo · '+n+' dias</div><div class="t2" style="flex:'+n+'">Folga · '+n+' dias</div>';
+  $("r-dates").innerHTML='<span>'+fmt(d)+'</span><span>'+fmt(d+n)+'</span><span>'+fmt(d+2*n)+'</span>';
+  $("r-facts").innerHTML=
+    '<div><b>'+fmt(d+n-1)+'</b><span>Último dia a bordo</span></div>'+
+    '<div><b>'+fmt(d+2*n-1)+'</b><span>Último dia de folga</span></div>'+
+    '<div><b>'+fmt(d+2*n)+'</b><span>Próximo embarque</span></div>';
+}
+
+function render(){
+  $("hoje").textContent="Hoje é "+now.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+".";
+  const sel=$("pessoa"), cur=sel.value;
+  sel.innerHTML=S.people.filter(p=>p.embark!=null).map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join("");
+  if(cur)sel.value=cur;
+  const cy=S.people.filter(p=>p.embark!=null).map(p=>({p,c:cycle(p)}));
+  const aboard=cy.filter(x=>x.c.st==="aboard").length, rest=cy.filter(x=>x.c.st==="rest").length;
+  const bad=S.courses.filter(c=>courseState(c).k==="bad").length, warn=S.courses.filter(c=>courseState(c).k==="warn").length;
+  $("stats").innerHTML=
+    '<div class="stat"><b>'+aboard+'</b><span>embarcados hoje</span></div>'+
+    '<div class="stat"><b>'+rest+'</b><span>de folga hoje</span></div>'+
+    '<div class="stat bad"><b>'+bad+'</b><span>cursos vencidos</span></div>'+
+    '<div class="stat warn"><b>'+warn+'</b><span>cursos vencem em até 90 dias</span></div>';
+
+  const al=[];
+  cy.forEach(({p,c})=>{
+    if(c.st!=="aboard"&&c.days>30)return;
+    S.courses.filter(k=>k.pid==p.id&&k.valid<=c.end).forEach(k=>{
+      const before=k.valid<c.next&&c.st!=="aboard";
+      const txt=k.valid<TODAY?"já está vencido":"vence em "+fmt(k.valid);
+      const key=p.id+"|"+k.name+"|"+k.valid;
+      al.push({key,res:(S.resolved||[]).includes(key),bad:k.valid<TODAY||before,html:'<div style="flex:1"><b>'+p.name+'</b>: '+k.name+' '+txt+', antes do fim do embarque ('+fmt(c.end)+').</div>'});
+    });
+  });
+  al.sort((a,b)=>b.bad-a.bad);
+  const pend=al.filter(a=>!a.res), done=al.filter(a=>a.res), nb=$("nbadge");nb.textContent=pend.length;nb.hidden=!pend.length;nb.style.background=pend.some(a=>a.bad)?"var(--bad)":"var(--warn)";
+  $("sino").setAttribute("aria-label","Avisos do sistema ("+pend.length+")");
+  const wo=!!$("alertas").querySelector("details[open]");
+  $("alertas").innerHTML=(pend.length?pend.map(a=>'<div class="alert'+(a.bad?"":" w")+'">'+a.html+'<button class="ghost" data-res="'+a.key+'">Resolvido</button></div>').join(""):'<p class="empty">Nenhum aviso no momento.</p>')+(done.length?'<details class="done"'+(wo?' open':'')+'><summary>Resolvidos ('+done.length+')</summary>'+done.map(a=>'<div class="alert ok">'+a.html+'<button class="ghost" data-reabrir="'+a.key+'">Reabrir</button></div>').join("")+'</details>':'');
+
+  const ds=$("dpessoa"), dcur=ds.value;
+  ds.innerHTML=cy.filter(x=>x.c.st==="aboard").map(x=>'<option value="'+x.p.id+'">'+x.p.name+'</option>').join("");
+  if(dcur)ds.value=dcur;
+  renderDobra();
+  $("equipe").innerHTML=cy.map(({p,c})=>{
+    const chip=c.st==="aboard"?'<span class="chip c-sea">A bordo · dia '+c.day+' de '+c.L+(c.dobra?' · dobra +'+c.dobra:'')+'</span>':c.st==="rest"?'<span class="chip c-ok">Folga · dia '+c.day+' de '+c.L+'</span>':'<span class="chip c-warn">Embarca em '+c.days+' dias</span>';
+    const mk=c.st==="future"?"":'<i style="left:'+(c.pos/(2*c.L)*100)+'%"></i>';
+    return '<tr><td><b>'+p.name+'</b><div class="mute">'+p.role+' · '+p.unit+'</div></td><td>'+chip+'</td><td><div class="bar">'+mk+'</div></td><td>'+fmt(c.next)+'<div class="mute">em '+c.days+' dias</div></td><td>'+(c.st==="aboard"?'<button class="ghost" data-dobra="'+p.id+'">Dobra</button>':'')+'</td></tr>';
+  }).join("");
+
+  renderCursos();
+  renderColabs();
+}
+
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const unesc=s=>{const t=document.createElement("textarea");t.innerHTML=s;return t.value};
+let CEDIT=null;
+let CDOCS=[],PID=null;
+function renderCdocs(){
+  document.querySelectorAll(".anx").forEach(a=>{
+    const d=CDOCS.find(x=>x.campo===a.dataset.campo);
+    a.querySelector("[data-anexo]").textContent=d?"Trocar":"Anexar";
+    a.querySelector("span").innerHTML=d?esc(d.name)+' <button class="ghost" type="button" data-rmcampo="'+esc(a.dataset.campo)+'" aria-label="Remover anexo">Remover</button>':"";
+  });
+  $("clistdocs").innerHTML=CDOCS.map((f,i)=>f.campo?"":esc(f.name)+' ('+Math.max(1,Math.round(f.size/1024))+' KB) <button class="ghost" type="button" data-rmdoc="'+i+'">Remover</button>').filter(Boolean).join("<br>");
+}
+function campos(p){return [["Nome completo",p.name],["Setor",p.setor?p.setor[0].toUpperCase()+p.setor.slice(1):""],["Cargo",p.role],["Embarcação ou unidade",p.unit],["RG",p.rg],["CPF",p.cpf],["Passaporte",p.pass],["Nome da mãe",p.mae],["Nome do pai",p.pai],["E-mail",p.email],["Celular",p.cel],["Contato de emergência",p.emerg],["Endereço",[p.rua&&(p.rua+(p.num?", "+p.num:"")),p.bairro,p.cidade,p.cep&&("CEP "+p.cep)].filter(Boolean).join(" - ")],["Escala",p.embark==null?"Sem escala":p.dias+" dias a bordo e "+p.dias+" de folga"]]}
+function openPasta(id){
+  PID=id;const p=person(id), docs=p.docs||[];
+  $("t-pa").textContent="Pasta de "+unesc(p.name);
+  $("pbody").innerHTML=campos(p).map(a=>'<div class="pf"><span class="mute">'+a[0]+'</span><span>'+(a[1]||"—")+'</span></div>').join("")+'<h3 style="margin:16px 0 6px;font-size:16px">Documentos anexados</h3>'+(docs.length?docs.map((f,i)=>'<div class="pf"><span class="mute">'+(f.campo?esc(f.campo):"Outros")+'</span><span>'+esc(f.name)+' <button class="ghost" type="button" data-dl="'+i+'">Baixar</button></span></div>').join(""):'<p class="empty">Nenhum documento anexado.</p>');
+  $("ppasta").showModal();
+}
+function dataToBlob(u){const h=u.split(","), m=/:(.*?);/.exec(h[0])[1], bin=atob(h[1]), a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m})}
+async function baixar(filename,data){
+  const dl=window.claude?await claude.use("downloads"):null;
+  if(!dl){toast("O download não está disponível neste ambiente.");return}
+  try{await dl.save({filename,data})}catch(e){if(!e||e.code!=="declined")toast("Não foi possível baixar o arquivo.")}
+}
+function renderColabs(){
+  const q=($("busca").value||"").toLowerCase().trim();
+  const rows=S.people.filter(p=>(p.name+" "+p.role+" "+p.unit).toLowerCase().includes(q));
+  $("colabs").innerHTML=rows.length?rows.map(p=>{
+    const c=p.embark==null?null:cycle(p), cs=S.courses.filter(k=>k.pid==p.id).map(courseState);
+    const nb=cs.filter(s=>s.k==="bad").length, nw=cs.filter(s=>s.k==="warn").length;
+    const st=!c?'<span class="mute">Sem escala</span>':c.st==="aboard"?'<span class="chip c-sea">A bordo · dia '+c.day+'</span>':c.st==="rest"?'<span class="chip c-ok">Folga · dia '+c.day+'</span>':'<span class="chip c-warn">Embarca em '+c.days+' dias</span>';
+    const cu=nb?'<span class="chip c-bad">'+nb+(nb>1?' vencidos':' vencido')+'</span>':nw?'<span class="chip c-warn">'+nw+' vencendo</span>':cs.length?'<span class="chip c-ok">Em dia</span>':'<span class="mute">Sem cursos</span>';
+    return '<tr><td><b>'+p.name+'</b><div class="mute">'+[p.setor?p.setor[0].toUpperCase()+p.setor.slice(1):"",p.role].filter(Boolean).join(" · ")+'</div></td><td>'+p.unit+'</td><td>'+st+'</td><td>'+cu+'</td><td><button class="ghost" data-pasta="'+p.id+'">Pasta</button> <button class="ghost" data-edit="'+p.id+'">Editar</button></td></tr>';
+  }).join(""):'<tr><td colspan="5" class="empty">Nenhum colaborador encontrado.</td></tr>';
+}
+function openColab(id){
+  CEDIT=id||null;
+  const p=id?person(id):null;
+  $("t-cd").textContent=p?"Editar colaborador":"Novo colaborador";
+  $("cnome").value=p?unesc(p.name):"";$("ccargo").value=p?unesc(p.role):"";$("cunid").value=p?unesc(p.unit):"";
+  const sv=(id,k)=>{$(id).value=p&&p[k]?unesc(p[k]):""};
+  [["crg","rg"],["ccpf","cpf"],["cpass","pass"],["cmae","mae"],["cpai","pai"],["cemail","email"],["ccel","cel"],["cemerg","emerg"],["crua","rua"],["cnum","num"],["cbairro","bairro"],["ccidade","cidade"],["ccep","cep"]].forEach(a=>sv(a[0],a[1]));
+  $("csetor").value=p&&p.setor||"";togEscala();
+  $("cdata").value=p&&p.embark!=null?new Date(p.embark*DAY).toISOString().slice(0,10):"";
+  CDOCS=p&&p.docs?[...p.docs]:[];renderCdocs();$("cerro").textContent="";
+  $("cdias").value=p&&p.dias?p.dias:42;
+  $("cremover").hidden=!p;$("cremover").textContent="Remover";
+  $("pcolab").showModal();$("cnome").focus();
+}
+let CSEL=null;
+function renderCursos(){
+  const g={bad:[],warn:[],ok:[]};
+  S.courses.forEach(c=>g[courseState(c).k].push(c));
+  const max=Math.max(1,g.bad.length,g.warn.length,g.ok.length);
+  const meta={bad:"Vencidos",warn:"Vencem em até 90 dias",ok:"Em dia"};
+  $("cgraf").innerHTML=["bad","warn","ok"].map(k=>'<button type="button" class="gcol g-'+k+(CSEL===k?' on':'')+'" data-g="'+k+'" aria-expanded="'+(CSEL===k)+'"><b>'+g[k].length+'</b><span class="gfill" style="height:'+Math.max(6,g[k].length/max*120)+'px"></span><span>'+meta[k]+'</span></button>').join("");
+  $("cdet").hidden=!CSEL;$("cdica").hidden=!!CSEL;
+  if(!CSEL)return;
+  $("cursos").innerHTML=g[CSEL].length?g[CSEL].sort((a,b)=>a.valid-b.valid).map(c=>{const s=courseState(c);return '<tr><td>'+c.name+'</td><td>'+person(c.pid).name+'</td><td>'+fmt(c.valid)+'</td><td><span class="chip c-'+s.k+'">'+s.t+'</span></td></tr>'}).join(""):'<tr><td colspan="4" class="empty">Nenhum curso nesta situação.</td></tr>';
+}
+function openDobra(id){
+  $("dpessoa").value=id;$("ddias").value=7;renderDobra();
+  $("pdobra").showModal();$("ddias").select();
+}
+function renderDobra(){
+  const p=person($("dpessoa").value), n=Math.max(1,parseInt($("ddias").value)||0);
+  if(!p){$("dres").innerHTML='<p class="empty">Nenhum colaborador está embarcado hoje.</p>';return}
+  const c=cycle(p), L2=c.L+n;
+  $("dres").innerHTML='<h3>'+L2+' dias a bordo</h3><p>'+c.L+' dias do embarque atual + '+n+' de dobra. A folga passa a ser de '+L2+' dias.</p><div class="facts"><div><b>'+fmt(c.start+L2-1)+'</b><span>Novo último dia a bordo</span></div><div><b>'+fmt(c.start+2*L2-1)+'</b><span>Último dia de folga</span></div><div><b>'+fmt(c.start+2*L2)+'</b><span>Próximo embarque</span></div></div>';
+}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2400)}
+$("data").value=iso(now);
+["data","dias"].forEach(i=>$(i).addEventListener("input",renderResult));
+$("salvar").addEventListener("click",()=>{
+  const p=person($("pessoa").value), n=parseInt($("dias").value);
+  if(!p||!n||n<1||!$("data").value){toast("Informe colaborador, data e dias embarcados.");return}
+  p.embark=toDay($("data").value);p.dias=n;p.dobra=0;
+  save();render();toast("Registro salvo para "+p.name+".");
+});
+$("ddias").addEventListener("input",renderDobra);
+$("sino").addEventListener("click",()=>$("pavisos").showModal());
+$("afechar").addEventListener("click",()=>$("pavisos").close());
+$("alertas").addEventListener("click",e=>{
+  const r=e.target.closest("[data-res]"), o=e.target.closest("[data-reabrir]");
+  if(!r&&!o)return;
+  S.resolved=S.resolved||[];
+  if(r)S.resolved.push(r.dataset.res);else S.resolved=S.resolved.filter(k=>k!==o.dataset.reabrir);
+  save();render();
+});
+$("dfechar").addEventListener("click",()=>$("pdobra").close());
+$("equipe").addEventListener("click",e=>{const b=e.target.closest("[data-dobra]");if(b)openDobra(b.dataset.dobra)});
+$("cgraf").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(!b)return;const k=b.dataset.g;CSEL=CSEL===k?null:k;renderCursos();$("cgraf").querySelector('[data-g="'+k+'"]').focus()});
+$("dpessoa").addEventListener("change",renderDobra);
+$("dsalvar").addEventListener("click",()=>{
+  const p=person($("dpessoa").value), n=parseInt($("ddias").value);
+  if(!p||!n||n<1){$("ddias").focus();return}
+  const c=cycle(p);
+  if(c.first){p.dobra=(p.dobra||0)+n}else{p.embark=c.start;p.dias=c.L;p.dobra=n}
+  $("pdobra").close();save();render();toast("Dobra de "+n+" dias adicionada para "+p.name+".");
+});
+$("reset").addEventListener("click",()=>{S=seed();save();render();renderResult();toast("Dados de exemplo restaurados.")});
+render();renderResult();
+function setView(v){
+  document.querySelectorAll("[data-view]").forEach(el=>{el.hidden=el.dataset.view!==v});
+  document.querySelectorAll("[data-tab]").forEach(b=>{if(b.dataset.tab===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+}
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)setView(b.dataset.tab)});
+$("novoc").addEventListener("click",()=>openColab());
+$("busca").addEventListener("input",renderColabs);
+$("colabs").addEventListener("click",e=>{const b=e.target.closest("[data-edit]"), g=e.target.closest("[data-pasta]");if(b)openColab(b.dataset.edit);else if(g)openPasta(g.dataset.pasta)});
+$("cfechar").addEventListener("click",()=>$("pcolab").close());
+$("cdocs").addEventListener("change",async e=>{
+  for(const f of e.target.files){
+    if(f.size>1048576){$("cerro").textContent="“"+f.name+"” passa de 1 MB e não foi anexado.";continue}
+    const data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f)});
+    CDOCS.push({name:f.name,size:f.size,data});
+  }
+  e.target.value="";renderCdocs();
+});
+$("clistdocs").addEventListener("click",e=>{const b=e.target.closest("[data-rmdoc]");if(b){CDOCS.splice(+b.dataset.rmdoc,1);renderCdocs()}});
+$("pbody").addEventListener("click",e=>{const b=e.target.closest("[data-dl]");if(!b)return;const f=(person(PID).docs||[])[+b.dataset.dl];if(f)baixar(f.name,dataToBlob(f.data))});
+$("pficha").addEventListener("click",()=>{const p=person(PID);baixar("ficha_"+unesc(p.name).normalize("NFD").replace(/[^\w]+/g,"_")+".txt",campos(p).map(a=>a[0]+": "+(unesc(a[1]||"")||"—")).join("\n"))});
+$("pfechar").addEventListener("click",()=>$("ppasta").close());
+let ANX=null;
+function togEscala(){$("cescala").hidden=$("csetor").value!=="ambiental"}
+$("csetor").addEventListener("change",togEscala);
+[["cnome","Nome completo"],["crg","RG"],["ccpf","CPF"],["cpass","Passaporte"],["cmae","Nome da mãe"],["cpai","Nome do pai"],["cemail","E-mail"],["ccel","Celular"],["cemerg","Contato de emergência"],["ccep","Endereço"]].forEach(a=>{
+  const w=document.createElement("div");w.className="anx";w.dataset.campo=a[1];
+  w.innerHTML='<button class="ghost" type="button" data-anexo="'+a[1]+'" aria-label="Anexar documento: '+a[1]+'">Anexar</button><span></span>';
+  $(a[0]).parentNode.appendChild(w);
+});
+$("pcolab").addEventListener("click",e=>{
+  const b=e.target.closest("[data-anexo]"), r=e.target.closest("[data-rmcampo]");
+  if(b){e.preventDefault();ANX=b.dataset.anexo;$("canexo").click()}
+  else if(r){e.preventDefault();CDOCS=CDOCS.filter(d=>d.campo!==r.dataset.rmcampo);renderCdocs()}
+});
+$("canexo").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";
+  if(!f)return;
+  if(f.size>1048576){$("cerro").textContent="“"+f.name+"” passa de 1 MB e não foi anexado.";return}
+  const data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f)});
+  CDOCS=CDOCS.filter(d=>d.campo!==ANX);CDOCS.push({campo:ANX,name:f.name,size:f.size,data});renderCdocs();
+});
+$("csalvar").addEventListener("click",()=>{
+  const v=id=>$(id).value.trim(), dg=id=>v(id).replace(/\D/g,"");
+  const amb=v("csetor")==="ambiental", n=parseInt($("cdias").value)||0;
+  const checks=[["cnome",!!v("cnome"),"Informe o nome completo."],["crg",!!v("crg"),"Informe o RG."],["ccpf",dg("ccpf").length===11,"O CPF precisa ter 11 números."],["cpass",!!v("cpass"),"Informe o número do passaporte."],["cmae",!!v("cmae"),"Informe o nome da mãe."],["cemail",/^\S+@\S+\.\S+$/.test(v("cemail")),"Informe um e-mail válido."],["ccel",dg("ccel").length>=10,"Informe o celular com DDD."],["csetor",!!v("csetor"),"Escolha o setor."],["cemerg",!!v("cemerg"),"Informe o contato de emergência."],["crua",!!v("crua"),"Informe a rua."],["cnum",!!v("cnum"),"Informe o número do endereço."],["ccep",dg("ccep").length===8,"O CEP precisa ter 8 números."],["cdata",!amb||!!$("cdata").value,"No setor ambiental, informe a data de embarque da escala."],["cdias",!amb||n>=1,"No setor ambiental, informe os dias da escala."]];
+  const bad=checks.find(c=>!c[1]);
+  if(bad){$("cerro").textContent=bad[2];$(bad[0]).focus();return}
+  $("cerro").textContent="";
+  const hasEsc=amb&&!!$("cdata").value&&n>=1;
+  const d={name:esc(v("cnome")),rg:esc(v("crg")),cpf:esc(v("ccpf")),pass:esc(v("cpass")),mae:esc(v("cmae")),pai:esc(v("cpai")),email:esc(v("cemail")),cel:esc(v("ccel")),setor:v("csetor"),emerg:esc(v("cemerg")),rua:esc(v("crua")),num:esc(v("cnum")),bairro:esc(v("cbairro")),cidade:esc(v("ccidade")),cep:esc(v("ccep")),role:esc(v("ccargo")),unit:esc(v("cunid")),embark:hasEsc?toDay($("cdata").value):null,dias:hasEsc?n:null,docs:CDOCS};
+  const snap=JSON.stringify(S), novo=!CEDIT;
+  if(CEDIT){const p=person(CEDIT);if(p.embark!==d.embark||p.dias!==d.dias)p.dobra=0;Object.assign(p,d)}
+  else S.people.push({id:Math.max(0,...S.people.map(p=>p.id))+1,...d,dobra:0,base:d.dias||42});
+  if(!save()){S=JSON.parse(snap);$("cerro").textContent="Não foi possível salvar: o armazenamento do navegador está cheio. Remova ou reduza os anexos.";return}
+  render();$("pcolab").close();toast(novo?"Colaborador adicionado.":"Colaborador atualizado.");
+});
+$("cremover").addEventListener("click",()=>{
+  if($("cremover").textContent!=="Confirmar remoção"){$("cremover").textContent="Confirmar remoção";return}
+  S.people=S.people.filter(p=>p.id!=CEDIT);S.courses=S.courses.filter(c=>c.pid!=CEDIT);
+  save();render();$("pcolab").close();toast("Colaborador removido.");
+});
+setView("painel");
+</script>
+</body>
+</html>
