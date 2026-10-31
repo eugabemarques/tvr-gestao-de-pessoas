@@ -1,4 +1,4 @@
-# TOVERI - Gestão de Pessoas (protótipo)
+# TVR - Gestão de Pessoas (protótipo)
 
 Protótipo de um painel de RH para controlar a escala de embarque 42x42, as dobras e o vencimento de cursos dos colaboradores. É uma página única (`index.html`), sem servidor e sem instalação.
 
