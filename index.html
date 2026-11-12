@@ -420,9 +420,9 @@ function openPasta(id){
 }
 function dataToBlob(u){const h=u.split(","), m=/:(.*?);/.exec(h[0])[1], bin=atob(h[1]), a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m})}
 async function baixar(filename,data){
-  const dl=window.claude&&claude.use?await claude.use("downloads"):null;
-  if(dl){try{await dl.save({filename,data})}catch(e){if(!e||e.code!=="declined")toast("Não foi possível baixar o arquivo.")}return}
-  try{const b=data instanceof Blob?data:new Blob([data],{type:"text/plain;charset=utf-8"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}catch(e){toast("Não foi possível baixar o arquivo.")}
+  const dl=window.claude?await claude.use("downloads"):null;
+  if(!dl){toast("O download não está disponível neste ambiente.");return}
+  try{await dl.save({filename,data})}catch(e){if(!e||e.code!=="declined")toast("Não foi possível baixar o arquivo.")}
 }
 function renderColabs(){
   const q=($("busca").value||"").toLowerCase().trim();
