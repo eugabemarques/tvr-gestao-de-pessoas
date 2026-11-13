@@ -81,9 +81,9 @@ $api = Get-MgApplication -Filter "displayName eq '$nomeApi'" | Select-Object -Fi
 if (-not $api) {
     $papeis = @(
         @{ id = [guid]::NewGuid(); displayName = 'Admin RH'; value = 'AdminRH'; isEnabled = $true
-           description = 'Acesso total, regras de escala e auditoria'; allowedMemberTypes = @('User') },
+           description = 'Acesso total ao sistema'; allowedMemberTypes = @('User') },
         @{ id = [guid]::NewGuid(); displayName = 'RH'; value = 'RH'; isEnabled = $true
-           description = 'Cadastros, embarques, cursos e documentos'; allowedMemberTypes = @('User') })
+           description = 'Acesso total ao sistema (hoje igual ao Admin RH)'; allowedMemberTypes = @('User') })
     $escopo = @{ id = [guid]::NewGuid(); value = 'acesso_usuario'; type = 'Admin'; isEnabled = $true
                  adminConsentDisplayName = 'Acessar o TOVERI em nome do usuário'
                  adminConsentDescription = 'Permite que as telas do TOVERI chamem a API em nome do usuário conectado.' }
