@@ -60,3 +60,26 @@ public class EstadoCompartilhadoTests
         }
     }
 }
+
+public class EnvioSharePointTests
+{
+    [Fact]
+    public void Nome_do_documento_usa_o_campo_e_nao_sobrescreve_frente_e_verso()
+    {
+        var d = System.Text.Json.Nodes.JsonNode.Parse("""{"campo":"RG / CPF / CNH","name":"foto.JPG","fid":"abcdef123456abcdef123456"}""")!.AsObject();
+        Assert.Equal("RG - CPF - CNH (abcdef).jpg", EnvioSharePoint.NomeDocumento(d));
+        var c = System.Text.Json.Nodes.JsonNode.Parse("""{"campo":"Curso: NR-35","name":"a.pdf","fid":"111111aaaaaa111111aaaaaa"}""")!.AsObject();
+        Assert.Equal("Curso - NR-35 (111111).pdf", EnvioSharePoint.NomeDocumento(c));
+    }
+
+    [Fact]
+    public void Ficha_tem_os_dados_e_decodifica_texto()
+    {
+        var p = System.Text.Json.Nodes.JsonNode.Parse("""{"id":1,"name":"Jo&#39;ao D&amp;Silva","setor":"manutencao","cpf":"529.982.247-25","docs":[{"campo":"ASO","name":"aso.pdf","fid":"x"}]}""")!.AsObject();
+        var f = EnvioSharePoint.Ficha(p);
+        Assert.Contains("Nome completo: Jo'ao D&Silva", f);
+        Assert.Contains("Setor: Manutenção Offshore", f);
+        Assert.Contains("CPF: 529.982.247-25", f);
+        Assert.Contains("- ASO: aso.pdf", f);
+    }
+}

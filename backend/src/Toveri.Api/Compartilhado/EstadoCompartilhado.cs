@@ -56,6 +56,8 @@ public sealed class EstadoCompartilhado
             """);
     }
 
+    public SqliteConnection Conexao() => Abrir();
+
     private SqliteConnection Abrir()
     {
         var c = new SqliteConnection(_conexao);

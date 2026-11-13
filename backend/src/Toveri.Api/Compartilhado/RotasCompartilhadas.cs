@@ -102,9 +102,11 @@ public static class RotasCompartilhadas
             return Results.Json(new JsonObject { ["versao"] = versao, ["dados"] = dados });
         });
 
+        api.MapGet("/sharepoint", (EnvioSharePoint sp) => Results.Json(sp.Situacao()));
+
         api.MapGet("/estado/versao", (EstadoCompartilhado e) => Results.Ok(new { versao = e.Versao() }));
 
-        api.MapPost("/estado/patch", async (HttpContext ctx, EstadoCompartilhado e) =>
+        api.MapPost("/estado/patch", async (HttpContext ctx, EstadoCompartilhado e, EnvioSharePoint sp) =>
         {
             var corpo = await JsonNode.ParseAsync(ctx.Request.Body);
             if (corpo?["patch"] is not JsonArray ops)
@@ -112,6 +114,11 @@ public static class RotasCompartilhadas
             if (ops.Count > 5000)
                 return Results.Json(new { erro = "Alteração grande demais." }, statusCode: StatusCodes.Status413PayloadTooLarge);
             var (dados, versao) = await e.GravarPatch(ops, ctx.Usuario().Login);
+            // Copia para a pasta do RH no SharePoint as fichas e anexos de quem foi alterado.
+            var ids = ops.OfType<JsonObject>().Where(o => o["c"]?.ToString() == "people" && o["v"] is not null)
+                .Select(o => o["k"]?.ToString()).ToHashSet();
+            if (ids.Count > 0)
+                sp.Agendar((dados["people"] as JsonArray ?? []).Where(p => ids.Contains(p?["id"]?.ToString())));
             return Results.Json(new JsonObject { ["versao"] = versao, ["dados"] = dados });
         });
 

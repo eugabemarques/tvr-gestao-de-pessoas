@@ -14,6 +14,9 @@ if (!string.IsNullOrWhiteSpace(conexao))
 // Dados compartilhados das telas (ver Compartilhado/EstadoCompartilhado.cs). No Azure: Toveri__Dados=/home/dados.
 var pastaDados = builder.Configuration["Toveri:Dados"] ?? Path.Combine(builder.Environment.ContentRootPath, "dados");
 builder.Services.AddSingleton(new EstadoCompartilhado(pastaDados));
+// Cópia dos cadastros para a pasta do RH no SharePoint (ver Compartilhado/EnvioSharePoint.cs).
+builder.Services.AddSingleton<EnvioSharePoint>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<EnvioSharePoint>());
 builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 25 * 1024 * 1024);
 
 // Login igual ao do Portal de Projetos: "Entrar com Microsoft" + lista de e-mails liberados.
