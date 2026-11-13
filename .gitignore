@@ -1,0 +1,16 @@
+# Resultado do script de liberação no Microsoft 365 (IDs do locatário; fica só no computador de quem roda)
+toveri-microsoft365.json
+
+# Configurações locais e segredos de desenvolvimento
+*.local.json
+.env
+.env.*
+
+# Dados de desenvolvimento (banco local e documentos de teste)
+dados-dev/
+
+# Ferramentas
+node_modules/
+.vs/
+.vscode/
+.idea/
