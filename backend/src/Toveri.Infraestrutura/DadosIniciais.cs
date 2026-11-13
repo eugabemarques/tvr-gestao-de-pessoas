@@ -47,7 +47,9 @@ internal static class DadosIniciais
             new RequisitoCurso { Id = 1, SetorId = Ids.SetorAmbiental, TipoCursoId = 1 },
             new RequisitoCurso { Id = 2, SetorId = Ids.SetorAmbiental, TipoCursoId = 2 },
             new RequisitoCurso { Id = 3, SetorId = Ids.SetorAmbiental, TipoCursoId = 3 },
-            new RequisitoCurso { Id = 4, SetorId = Ids.SetorAmbiental, TipoCursoId = 4 });
+            new RequisitoCurso { Id = 4, SetorId = Ids.SetorAmbiental, TipoCursoId = 4 },
+            // ASO: obrigatório para todos os setores, mas só depois da admissão (standby não conta).
+            new RequisitoCurso { Id = 5, SetorId = null, TipoCursoId = 7, SomenteAposAdmissao = true });
 
         m.Entity<TipoDocumento>().HasData(
             new TipoDocumento { Id = 1, Nome = "RG / CPF / CNH", Categoria = CategoriaDocumento.Pessoal },

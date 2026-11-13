@@ -13,6 +13,7 @@ public class ToveriDbContext(DbContextOptions<ToveriDbContext> options) : DbCont
     public DbSet<RegraEscala> RegrasEscala => Set<RegraEscala>();
     public DbSet<VersaoRegraEscala> VersoesRegraEscala => Set<VersaoRegraEscala>();
     public DbSet<Embarque> Embarques => Set<Embarque>();
+    public DbSet<CompensacaoFolga> CompensacoesFolga => Set<CompensacaoFolga>();
     public DbSet<TipoDocumento> TiposDocumento => Set<TipoDocumento>();
     public DbSet<RequisitoDocumento> RequisitosDocumento => Set<RequisitoDocumento>();
     public DbSet<DocumentoColaborador> Documentos => Set<DocumentoColaborador>();
@@ -46,6 +47,7 @@ public class ToveriDbContext(DbContextOptions<ToveriDbContext> options) : DbCont
             e.Property(x => x.CtfIbama).HasMaxLength(30);
             e.Property(x => x.Cargo).HasMaxLength(100);
             e.Ignore(x => x.Ativo);
+            e.Ignore(x => x.EmStandby);
             e.OwnsOne(x => x.Endereco, end =>
             {
                 end.Property(x => x.Rua).HasMaxLength(200);
@@ -104,6 +106,16 @@ public class ToveriDbContext(DbContextOptions<ToveriDbContext> options) : DbCont
             e.ToTable("Embarques");
             e.HasOne<Colaborador>().WithMany().HasForeignKey(x => x.ColaboradorId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Barco>().WithMany().HasForeignKey(x => x.BarcoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.ColaboradorId, x.Inicio }).IsUnique();
+        });
+
+        m.Entity<CompensacaoFolga>(e =>
+        {
+            e.ToTable("CompensacoesFolga");
+            e.Property(x => x.Observacao).HasMaxLength(500);
+            e.Property(x => x.RegistradoPor).HasMaxLength(254);
+            e.Ignore(x => x.Fim);
+            e.HasOne<Colaborador>().WithMany().HasForeignKey(x => x.ColaboradorId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ColaboradorId, x.Inicio }).IsUnique();
         });
 

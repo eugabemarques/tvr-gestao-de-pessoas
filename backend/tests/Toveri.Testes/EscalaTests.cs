@@ -129,13 +129,82 @@ public class EscalaTests
     }
 
     [Fact]
-    public void Entre_a_folga_e_um_embarque_atrasado_fica_fora_da_escala()
+    public void Entre_a_folga_e_um_embarque_atrasado_fica_aguardando()
     {
         var s = CalculadoraEscala.SituacaoEm(Escala42x42(),
             [Embarque(new(2026, 1, 1)), Embarque(new(2026, 4, 10))], new(2026, 4, 1));
 
-        Assert.Equal(TipoSituacao.ForaDaEscala, s.Tipo);
+        Assert.Equal(TipoSituacao.AguardandoEmbarque, s.Tipo);
         Assert.Equal(new DateOnly(2026, 4, 10), s.ProximoEmbarque);
+    }
+
+    // Convocação antecipada: embarcou em 16/03, 10 dias antes do fim da folga (26/03).
+    private static Embarque[] ComFolgaNaoGozada() => [Embarque(new(2026, 1, 1)), Embarque(new(2026, 3, 16))];
+
+    private static CompensacaoFolga Compensacao(DateOnly inicio, int dias) => new() { Inicio = inicio, Dias = dias };
+
+    [Fact]
+    public void Folga_nao_gozada_vira_saldo_e_a_compensacao_desconta()
+    {
+        Assert.Equal(10, CalculadoraEscala.Saldo(Escala42x42(), ComFolgaNaoGozada(), []).Saldo);
+
+        var saldo = CalculadoraEscala.Saldo(Escala42x42(), ComFolgaNaoGozada(), [Compensacao(new(2026, 6, 8), 6)]);
+        Assert.Equal(10, saldo.NaoGozados);
+        Assert.Equal(6, saldo.Compensados);
+        Assert.Equal(4, saldo.Saldo);
+    }
+
+    [Fact]
+    public void Compensacao_adia_o_proximo_embarque_previsto()
+    {
+        // O embarque de 16/03 levaria ao próximo em 08/06. Compensando 6 dias, ele passa para 14/06.
+        CompensacaoFolga[] compensacoes = [Compensacao(new(2026, 6, 8), 6)];
+
+        var periodos = CalculadoraEscala.Projetar(Escala42x42(), ComFolgaNaoGozada(), new(2026, 6, 30), compensacoes);
+        Assert.Equal(new DateOnly(2026, 6, 14), periodos[2].Inicio);
+
+        var s = CalculadoraEscala.SituacaoEm(Escala42x42(), ComFolgaNaoGozada(), new(2026, 6, 10), compensacoes);
+        Assert.Equal(TipoSituacao.FolgaCompensatoria, s.Tipo);
+        Assert.Equal(3, s.DiaDaFase);
+        Assert.Equal(6, s.DiasDaFase);
+        Assert.Equal(new DateOnly(2026, 6, 14), s.ProximoEmbarque);
+    }
+
+    [Fact]
+    public void Compensacao_valida_no_dia_do_embarque_previsto_e_aceita()
+    {
+        CalculadoraEscala.ValidarCompensacao(Escala42x42(), ComFolgaNaoGozada(), [], Compensacao(new(2026, 6, 8), 10));
+    }
+
+    [Fact]
+    public void Compensacao_maior_que_o_saldo_e_recusada()
+    {
+        var erro = Assert.Throws<RegraDeNegocioException>(() =>
+            CalculadoraEscala.ValidarCompensacao(Escala42x42(), ComFolgaNaoGozada(),
+                [Compensacao(new(2026, 6, 8), 6)], Compensacao(new(2026, 7, 26), 5)));
+
+        Assert.Contains("4 dias", erro.Message);
+    }
+
+    [Fact]
+    public void Compensacao_no_meio_da_folga_ou_do_embarque_e_recusada()
+    {
+        Assert.Throws<RegraDeNegocioException>(() =>
+            CalculadoraEscala.ValidarCompensacao(Escala42x42(), ComFolgaNaoGozada(), [], Compensacao(new(2026, 5, 10), 3)));
+        Assert.Throws<RegraDeNegocioException>(() =>
+            CalculadoraEscala.ValidarCompensacao(Escala42x42(), ComFolgaNaoGozada(), [], Compensacao(new(2026, 6, 9), 3)));
+    }
+
+    [Fact]
+    public void Compensacao_que_cobre_um_embarque_registrado_e_recusada()
+    {
+        // Aguardando de 08/06 a 11/06; embarque registrado em 12/06.
+        Embarque[] embarques = [.. ComFolgaNaoGozada(), Embarque(new(2026, 6, 12))];
+
+        CalculadoraEscala.ValidarCompensacao(Escala42x42(), embarques, [], Compensacao(new(2026, 6, 8), 4));
+        var erro = Assert.Throws<RegraDeNegocioException>(() =>
+            CalculadoraEscala.ValidarCompensacao(Escala42x42(), embarques, [], Compensacao(new(2026, 6, 8), 5)));
+        Assert.Contains("12/06/2026", erro.Message);
     }
 
     [Fact]

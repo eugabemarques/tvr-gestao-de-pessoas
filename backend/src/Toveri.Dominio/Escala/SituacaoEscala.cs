@@ -11,8 +11,11 @@ public enum TipoSituacao
     Embarcado,
     Folga,
 
-    /// <summary>Entre o fim de uma folga e um embarque registrado que começa depois do previsto.</summary>
-    ForaDaEscala,
+    /// <summary>Compensando folga não gozada de embarques anteriores.</summary>
+    FolgaCompensatoria,
+
+    /// <summary>Folga terminou e o próximo embarque registrado começa depois do previsto.</summary>
+    AguardandoEmbarque,
 }
 
 /// <summary>Onde o colaborador está na escala numa data.</summary>

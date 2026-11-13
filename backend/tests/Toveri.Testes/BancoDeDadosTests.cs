@@ -37,6 +37,9 @@ public sealed class BancoDeDadosTests : IDisposable
         var ambiental = db.Setores.Single(s => s.Nome == "Ambiental");
         Assert.Equal(regra.Id, ambiental.RegraEscalaId);
         Assert.Equal(4, db.RequisitosCurso.Count(r => r.SetorId == ambiental.Id));
+        var aso = db.RequisitosCurso.Single(r => r.SetorId == null);
+        Assert.Equal("ASO", db.TiposCurso.Single(t => t.Id == aso.TipoCursoId).Nome);
+        Assert.True(aso.SomenteAposAdmissao);
         Assert.Equal(2, db.RequisitosDocumento.Count(r => r.SetorId == ambiental.Id));
         Assert.Equal(9, db.RequisitosDocumento.Count(r => r.SetorId == null && r.Obrigatorio));
     }
@@ -53,6 +56,10 @@ public sealed class BancoDeDadosTests : IDisposable
             id = c.Id;
             db.Embarques.Add(new Embarque { ColaboradorId = id, Inicio = new(2026, 11, 1), DiasEmbarcado = 42 });
             db.Cursos.Add(new CursoColaborador { ColaboradorId = id, TipoCursoId = 1, Validade = new(2027, 5, 1) });
+            db.CompensacoesFolga.Add(new CompensacaoFolga
+            {
+                ColaboradorId = id, Inicio = new(2027, 1, 1), Dias = 5, RegistradoPor = "rh", RegistradoEm = DateTimeOffset.UtcNow,
+            });
             db.SaveChanges();
         }
 
@@ -62,6 +69,8 @@ public sealed class BancoDeDadosTests : IDisposable
             Assert.Equal("Ambiental", c.Setor!.Nome);
             Assert.Equal("01001000", c.Endereco.Cep);
             Assert.True(c.Ativo);
+            Assert.True(c.EmStandby);
+            Assert.Equal(new DateOnly(2027, 1, 5), db.CompensacoesFolga.Single(x => x.ColaboradorId == id).Fim);
             Assert.Single(db.Embarques.Where(e => e.ColaboradorId == id));
             Assert.Equal("CBSP", db.Cursos.Include(x => x.TipoCurso).Single(x => x.ColaboradorId == id).TipoCurso!.Nome);
         }

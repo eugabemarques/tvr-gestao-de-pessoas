@@ -24,11 +24,31 @@ A escala de cada setor é um cadastro (hoje só existe a **42x42**, usada pelo A
 
 ### Casos especiais
 
-| Situação | Comportamento | A confirmar com o RH |
-|---|---|---|
-| Embarque registrado começa **durante a folga** do anterior (convocação antecipada) | A folga que sobrou fica registrada como "dias de folga não gozados" | Esses dias viram saldo a compensar? |
-| Embarque registrado começa **antes do fim** do embarque anterior | Recusado: os dados estão inconsistentes | — |
-| Embarque registrado começa **depois** do previsto | Os dias entre o fim da folga e o novo embarque ficam "fora da escala" | Como chamar esse período (aguardando, afastado etc.)? |
+| Situação | Comportamento |
+|---|---|
+| Embarque registrado começa **durante a folga** do anterior (convocação antecipada) | A folga que sobrou vira **folga não gozada** e entra no saldo a compensar |
+| Embarque registrado começa **antes do fim** do embarque anterior | Recusado: os dados estão inconsistentes |
+| Embarque registrado começa **depois** do previsto | Os dias entre o fim da folga e o novo embarque aparecem como **Aguardando** |
+
+### Folga não gozada e compensação
+
+A folga não gozada é compensada mais à frente, conforme o cronograma do projeto e a disponibilidade. O RH registra a compensação com a data de início e a quantidade de dias:
+
+- **Saldo** = folga não gozada acumulada − dias já compensados. Não é possível compensar mais do que o saldo.
+- A compensação **começa no dia em que o colaborador embarcaria** (embarque previsto ou período "Aguardando") e **adia o próximo embarque** pelo número de dias compensados.
+- Não pode começar no meio de um embarque ou de uma folga, nem cobrir um embarque já registrado.
+- Durante a compensação, o colaborador aparece como **Folga compensatória**.
+
+### Situações possíveis na escala
+
+| Situação | Quando |
+|---|---|
+| Sem escala | Nenhum embarque registrado |
+| Aguardando primeiro embarque | O primeiro embarque ainda não começou |
+| Embarcado | A bordo, incluindo dias de dobra |
+| Folga | Folga do embarque |
+| Folga compensatória | Compensando folga não gozada |
+| Aguardando | Folga terminou e o próximo embarque registrado começa depois do previsto |
 
 ## Validade de cursos e ASO
 
@@ -56,8 +76,15 @@ Cadastros por setor, carregados com as regras do protótipo:
 
 - **Todos os setores:** RG/CPF/CNH, certidão de nascimento ou casamento, título de eleitor, CTPS, comprovante de residência, comprovante de escolaridade e as três vacinas (Covid-19, DT e febre amarela). Passaporte e PIS entram só se o colaborador tiver.
 - **Ambiental:** também CTF Ibama e Work Citation, e os cursos CBSP, THUET/BOSIET/FOET, Norueguês/OEUK/ENG1 e Certificado PAM.
+- **ASO:** obrigatório para todos os setores, mas **só depois da admissão**. Quem está em standby não aparece com o ASO pendente.
+
+Qualquer documento ou curso pode ser marcado como "somente após admissão" no cadastro de requisitos.
 
 Um documento substituído por um arquivo novo continua guardado no histórico.
+
+## Standby
+
+O colaborador sem data de admissão está em **standby**: cadastrado, mas ainda não contratado. Ao registrar a data de admissão, os requisitos "somente após admissão" (como o ASO) passam a ser cobrados.
 
 ## Cadastro de colaboradores
 

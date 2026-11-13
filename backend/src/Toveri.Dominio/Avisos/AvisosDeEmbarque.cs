@@ -25,9 +25,10 @@ public static class AvisosDeEmbarque
         IEnumerable<Embarque> embarques,
         IEnumerable<ItemComValidade> itens,
         DateOnly hoje,
-        int diasDeAntecedencia = 30)
+        int diasDeAntecedencia = 30,
+        IEnumerable<CompensacaoFolga>? compensacoes = null)
     {
-        var periodos = CalculadoraEscala.Projetar(regra, embarques, hoje.AddDays(diasDeAntecedencia));
+        var periodos = CalculadoraEscala.Projetar(regra, embarques, hoje.AddDays(diasDeAntecedencia), compensacoes);
         var atual = periodos.FirstOrDefault(p => p.EstaABordoEm(hoje));
         var alvo = atual ?? periodos.FirstOrDefault(p =>
             p.Inicio > hoje && p.Inicio.DayNumber - hoje.DayNumber <= diasDeAntecedencia);

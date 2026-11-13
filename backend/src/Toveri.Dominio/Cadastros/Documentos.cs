@@ -24,6 +24,9 @@ public class RequisitoDocumento
 
     /// <summary>Falso para documentos que só entram se o colaborador tiver (ex.: passaporte).</summary>
     public bool Obrigatorio { get; set; } = true;
+
+    /// <summary>Só é cobrado depois da admissão (não vale para quem está em standby).</summary>
+    public bool SomenteAposAdmissao { get; set; }
 }
 
 /// <summary>Arquivo enviado. O conteúdo fica no SharePoint; aqui ficam só os dados de controle.</summary>
@@ -61,11 +64,15 @@ public class TipoCurso
     public bool EhAso { get; set; }
 }
 
+/// <summary>Curso ou ASO exigido de todos os setores (SetorId vazio) ou de um setor específico.</summary>
 public class RequisitoCurso
 {
     public int Id { get; set; }
-    public int SetorId { get; set; }
+    public int? SetorId { get; set; }
     public int TipoCursoId { get; set; }
+
+    /// <summary>Só é cobrado depois da admissão (ex.: ASO, para quem está em standby).</summary>
+    public bool SomenteAposAdmissao { get; set; }
 }
 
 public class CursoColaborador
@@ -82,27 +89,29 @@ public class CursoColaborador
 
 public static class Pendencias
 {
-    /// <summary>Tipos de documento obrigatórios para o setor que o colaborador ainda não enviou.</summary>
+    /// <summary>Tipos de documento obrigatórios para o colaborador que ele ainda não enviou.</summary>
+    /// <param name="admitido">Falso para quem está em standby: os requisitos "somente após admissão" não contam.</param>
     public static IReadOnlyList<int> DocumentosPendentes(
-        int setorId, IEnumerable<RequisitoDocumento> requisitos, IEnumerable<DocumentoColaborador> documentos)
+        int setorId, bool admitido, IEnumerable<RequisitoDocumento> requisitos, IEnumerable<DocumentoColaborador> documentos)
     {
         var enviados = documentos.Where(d => d.Vigente && d.TipoDocumentoId is not null)
             .Select(d => d.TipoDocumentoId!.Value).ToHashSet();
         return requisitos
-            .Where(r => r.Obrigatorio && (r.SetorId is null || r.SetorId == setorId))
+            .Where(r => r.Obrigatorio && (r.SetorId is null || r.SetorId == setorId) && (admitido || !r.SomenteAposAdmissao))
             .Select(r => r.TipoDocumentoId)
             .Distinct()
             .Where(t => !enviados.Contains(t))
             .ToList();
     }
 
-    /// <summary>Cursos obrigatórios para o setor que o colaborador ainda não tem cadastrados.</summary>
+    /// <summary>Cursos e ASO obrigatórios para o colaborador que ele ainda não tem cadastrados.</summary>
+    /// <param name="admitido">Falso para quem está em standby: os requisitos "somente após admissão" não contam.</param>
     public static IReadOnlyList<int> CursosPendentes(
-        int setorId, IEnumerable<RequisitoCurso> requisitos, IEnumerable<CursoColaborador> cursos)
+        int setorId, bool admitido, IEnumerable<RequisitoCurso> requisitos, IEnumerable<CursoColaborador> cursos)
     {
         var cadastrados = cursos.Select(c => c.TipoCursoId).ToHashSet();
         return requisitos
-            .Where(r => r.SetorId == setorId)
+            .Where(r => (r.SetorId is null || r.SetorId == setorId) && (admitido || !r.SomenteAposAdmissao))
             .Select(r => r.TipoCursoId)
             .Distinct()
             .Where(t => !cadastrados.Contains(t))

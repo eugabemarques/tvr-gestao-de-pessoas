@@ -30,6 +30,7 @@ public class Colaborador
     /// <summary>Barco habitual, sugerido ao registrar um embarque.</summary>
     public int? BarcoId { get; set; }
 
+    /// <summary>Vazia enquanto o colaborador está em standby, antes de ser de fato contratado.</summary>
     public DateOnly? DataAdmissao { get; set; }
 
     /// <summary>
@@ -39,6 +40,9 @@ public class Colaborador
     public DateOnly? DataDesligamento { get; set; }
 
     public bool Ativo => DataDesligamento is null;
+
+    /// <summary>Cadastrado, mas ainda não contratado.</summary>
+    public bool EmStandby => Ativo && DataAdmissao is null;
 
     public DateTimeOffset CriadoEm { get; set; }
     public DateTimeOffset AtualizadoEm { get; set; }
