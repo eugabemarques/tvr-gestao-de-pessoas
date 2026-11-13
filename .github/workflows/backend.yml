@@ -1,0 +1,27 @@
+name: Back end
+
+# Compila e roda os testes do back end a cada envio que mexe nele.
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Testes
+        working-directory: backend
+        run: dotnet test Toveri.slnx --configuration Release
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+          DOTNET_NOLOGO: "1"

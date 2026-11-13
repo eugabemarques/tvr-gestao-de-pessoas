@@ -1,6 +1,21 @@
-# TOVERI - Gestão de Pessoas (protótipo)
+# TOVERI - Gestão de Pessoas
 
-Protótipo de um painel de RH para controlar a escala de embarque 42x42, as dobras e o vencimento de cursos dos colaboradores. É uma página única (`index.html`), sem servidor e sem instalação.
+Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cursos e ASO e os documentos dos colaboradores.
+
+## Estrutura do repositório
+
+| Pasta | Conteúdo |
+|---|---|
+| `index.html` | Protótipo das telas (página única, sem servidor) |
+| `backend/` | API em .NET 10, regras de negócio e banco de dados ([detalhes](backend/README.md)) |
+| `frontend/` | Telas em React (ainda não iniciado) |
+| `infra/` | Recursos do Azure (ainda não iniciado) |
+| `docs/` | [Regras de negócio](docs/regras-de-negocio.md) |
+| `referencia/servidor-python/` | Primeiro servidor do protótipo, usado como especificação |
+
+## Protótipo
+
+O protótipo é uma página única (`index.html`), sem servidor e sem instalação.
 
 > **Atenção:** este é um protótipo de validação. Os dados ficam salvos apenas no navegador de quem usa e **não há login**. Use somente dados fictícios. Não coloque CPF, RG, passaporte ou documentos reais aqui.
 

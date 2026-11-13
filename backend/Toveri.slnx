@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Toveri.Api/Toveri.Api.csproj" />
+    <Project Path="src/Toveri.Dominio/Toveri.Dominio.csproj" />
+    <Project Path="src/Toveri.Infraestrutura/Toveri.Infraestrutura.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Toveri.Testes/Toveri.Testes.csproj" />
+  </Folder>
+</Solution>
