@@ -4,8 +4,8 @@
 
 .DESCRIPTION
   Faz, de forma automática, os 4 passos do documento "TOVERI Gestão de Pessoas: liberação no Microsoft 365":
-    1. Registra a API e as telas (Web) no Entra ID, com o escopo acesso_usuario e os perfis AdminRH, RH e Gestor.
-    2. Cria os grupos TOVERI - Admin RH / RH / Gestores, liga cada um ao seu perfil e exige atribuição para entrar.
+    1. Registra a API e as telas (Web) no Entra ID, com o escopo acesso_usuario e os perfis AdminRH e RH.
+    2. Cria os grupos TOVERI - Admin RH e TOVERI - RH, liga cada um ao seu perfil e exige atribuição para entrar.
     3. Concede à API a permissão Sites.Selected do Microsoft Graph (sozinha, não dá acesso a nenhum site).
     4. Cria o site privado "TOVERI RH - Testes" e dá à API permissão de gravação só nele.
   Pode ser rodado mais de uma vez: o que já existe é reaproveitado.
@@ -14,7 +14,7 @@
   Privilégios + Administrador do SharePoint). Não altera nada fora do que está listado acima.
 
 .EXAMPLE
-  .\configurar-microsoft365.ps1 -Proprietario gabriel@toveri.com.br -RH ana@toveri.com.br -Gestores joao@toveri.com.br
+  .\configurar-microsoft365.ps1 -Proprietario gabriel@toveri.com.br -AdminRH mariana@toveri.com.br -RH anaclara@toveri.com.br
 #>
 [CmdletBinding()]
 param(
@@ -22,7 +22,6 @@ param(
     [Parameter(Mandatory)] [string] $Proprietario,
     [string[]] $AdminRH = @(),
     [string[]] $RH = @(),
-    [string[]] $Gestores = @(),
     # Locatário da TOVERI. Não altere: o sistema é sempre da TOVERI.
     [string] $TenantId = '874641cf-fce4-4923-b71f-a1d725541626',
     # Site de testes já existente (opcional). Vazio = o script cria "TOVERI RH - Testes".
@@ -84,9 +83,7 @@ if (-not $api) {
         @{ id = [guid]::NewGuid(); displayName = 'Admin RH'; value = 'AdminRH'; isEnabled = $true
            description = 'Acesso total, regras de escala e auditoria'; allowedMemberTypes = @('User') },
         @{ id = [guid]::NewGuid(); displayName = 'RH'; value = 'RH'; isEnabled = $true
-           description = 'Cadastros, embarques, cursos e documentos'; allowedMemberTypes = @('User') },
-        @{ id = [guid]::NewGuid(); displayName = 'Gestor'; value = 'Gestor'; isEnabled = $true
-           description = 'Consulta, sem dados pessoais sensíveis'; allowedMemberTypes = @('User') })
+           description = 'Cadastros, embarques, cursos e documentos'; allowedMemberTypes = @('User') })
     $escopo = @{ id = [guid]::NewGuid(); value = 'acesso_usuario'; type = 'Admin'; isEnabled = $true
                  adminConsentDisplayName = 'Acessar o TOVERI em nome do usuário'
                  adminConsentDescription = 'Permite que as telas do TOVERI chamem a API em nome do usuário conectado.' }
@@ -140,8 +137,7 @@ function Atribuir($sp, $existentes, $principalId, $papelId) {
 
 $definicoes = @(
     @{ nome = 'TOVERI - Admin RH'; papel = 'AdminRH'; membros = @($Proprietario) + $AdminRH },
-    @{ nome = 'TOVERI - RH'; papel = 'RH'; membros = $RH },
-    @{ nome = 'TOVERI - Gestores'; papel = 'Gestor'; membros = $Gestores })
+    @{ nome = 'TOVERI - RH'; papel = 'RH'; membros = $RH })
 $grupos = @{}
 foreach ($d in $definicoes) {
     $grupo = Get-MgGroup -Filter "displayName eq '$($d.nome)'" | Select-Object -First 1
@@ -235,7 +231,6 @@ $resultado = [ordered]@{
     SiteTestesUrl     = $site.WebUrl
     GrupoAdminRH      = $grupos['AdminRH']
     GrupoRH           = $grupos['RH']
-    GrupoGestores     = $grupos['Gestor']
     GruposPorPessoa   = $avisoLicenca
 }
 $resultado | ConvertTo-Json | Tee-Object -FilePath (Join-Path (Get-Location) 'toveri-microsoft365.json')
