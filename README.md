@@ -69,9 +69,13 @@ Sistema definitivo hospedado no Azure (região Brazil South):
 - **Front end:** React com TypeScript no Azure Static Web Apps.
 - **Back end:** API em .NET no Azure App Service.
 - **Banco de dados:** Azure SQL Database.
-- **Documentos:** Azure Blob Storage privado.
+- **Documentos:** SharePoint da empresa via Microsoft Graph, com uma pasta por colaborador (exige um aplicativo registrado pelo administrador do Microsoft 365).
 - **Login:** Microsoft Entra ID (contas Microsoft 365 da empresa), com perfis de acesso.
 - **Avisos de vencimento por e-mail:** tarefa diária no Azure Functions.
 - **LGPD:** trilha de auditoria; ASO e vacinação tratados como dados sensíveis.
 
 Regras de escala configuráveis pelo RH, com data de início de vigência para não alterar o histórico.
+
+## Servidor de referência
+
+A pasta `referencia/servidor-python/` guarda o primeiro servidor do protótipo (Python, FastAPI e SQLite), com login próprio, dados compartilhados, arquivos e auditoria. Ele serve de especificação para a versão em .NET e **não será publicado no Azure**. Instruções de uso estão no README da própria pasta.

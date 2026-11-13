@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · TOVERI - Gestão de Pessoas</title>
+<style>
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Helvetica Neue",Arial,system-ui,sans-serif;--panel:#fff;--ink:#1d1d1f;--mute:#6e6e73;--line:rgba(60,60,67,.16);--sea:#0071e3;--brand:#154a78;--bad:#c62828;
+--wall:radial-gradient(1200px 800px at 8% 0%,#bcd6ff 0%,transparent 60%),radial-gradient(900px 700px at 100% 10%,#f6c9e4 0%,transparent 55%),radial-gradient(1000px 900px at 60% 100%,#b9ecdf 0%,transparent 60%),linear-gradient(160deg,#eef2fb,#f7eef6);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--panel:#1e2028;--ink:#f5f5f7;--mute:#a1a1a8;--line:rgba(235,235,245,.14);--sea:#2b8cff;--brand:#fff;--bad:#ff6b6b;
+--wall:radial-gradient(1200px 800px at 8% 0%,#1d3566 0%,transparent 60%),radial-gradient(900px 700px at 100% 10%,#4a1f45 0%,transparent 55%),radial-gradient(1000px 900px at 60% 100%,#123f3a 0%,transparent 60%),linear-gradient(160deg,#0d0f15,#151019);color-scheme:dark}}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--wall);background-attachment:fixed}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;font:15px/1.5 var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+main{width:min(400px,100%);padding:36px 32px 30px;border-radius:26px;background:color-mix(in srgb,var(--panel) 72%,transparent);-webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);border:1px solid var(--line);box-shadow:0 18px 50px rgba(20,30,60,.18),inset 0 1px 0 rgba(255,255,255,.6)}
+.logo{display:block;height:56px;margin:0 auto 14px}
+.lw{display:none}
+@media (prefers-color-scheme:dark){.lc{display:none}.lw{display:block}main{box-shadow:0 18px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1)}}
+h1{font-size:19px;font-weight:650;text-align:center;margin:0 0 4px;color:var(--brand);letter-spacing:-.01em}
+p.sub{text-align:center;color:var(--mute);margin:0 0 24px;font-size:14px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mute);margin:0 0 14px}
+input{display:block;width:100%;margin-top:6px;font:inherit;color:var(--ink);padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 75%,transparent)}
+input:focus-visible,button:focus-visible{outline:3px solid color-mix(in srgb,var(--sea) 55%,transparent);outline-offset:1px}
+button{width:100%;margin-top:8px;font:600 15px var(--font);color:#fff;background:var(--sea);border:0;border-radius:999px;padding:12px;cursor:pointer;box-shadow:0 6px 16px color-mix(in srgb,var(--sea) 35%,transparent)}
+button:disabled{opacity:.6;cursor:default}
+#erro{min-height:1.4em;color:var(--bad);font-weight:600;font-size:13px;margin:4px 0 0;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <img class="logo lc" src="/logo-cor.png" alt="TOVERI">
+  <img class="logo lw" src="/logo-branca.png" alt="TOVERI">
+  <h1>Gestão de Pessoas</h1>
+  <p class="sub">Entre com seu usuário e senha.</p>
+  <form id="f" novalidate>
+    <label>Usuário<input id="login" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Senha<input id="senha" type="password" autocomplete="current-password" required></label>
+    <button id="ok" type="submit">Entrar</button>
+    <p id="erro" role="alert"></p>
+  </form>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+$("login").focus();
+$("f").addEventListener("submit",async e=>{
+  e.preventDefault();$("erro").textContent="";
+  const login=$("login").value.trim(), senha=$("senha").value;
+  if(!login||!senha){$("erro").textContent="Informe usuário e senha.";(login?$("senha"):$("login")).focus();return}
+  $("ok").disabled=true;$("ok").textContent="Entrando…";
+  try{
+    const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json","X-Toveri":"1"},body:JSON.stringify({login,senha})});
+    if(r.ok){location.replace("/");return}
+    const j=await r.json().catch(()=>({}));$("erro").textContent=j.detail||"Não foi possível entrar.";$("senha").select();
+  }catch(err){$("erro").textContent="Sem conexão com o servidor."}
+  $("ok").disabled=false;$("ok").textContent="Entrar";
+});
+</script>
+</body>
+</html>
