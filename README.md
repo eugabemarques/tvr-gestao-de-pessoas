@@ -8,7 +8,9 @@ Protótipo de um painel de RH para controlar a escala de embarque 42x42, as dobr
 
 Baixe o `index.html` e abra no navegador (duplo clique). Não precisa instalar nada.
 
-Os botões de download (documentos anexados e ficha do colaborador) só funcionam na versão publicada na plataforma onde o protótipo foi criado. Abrindo o arquivo direto no computador, eles avisam que o download não está disponível.
+Os downloads (documentos anexados, ficha do colaborador, Excel e PDF) funcionam tanto na versão publicada quanto abrindo o arquivo direto no navegador.
+
+A opção **Pasta no computador** (salvar a pasta de cada colaborador numa pasta local, por exemplo no OneDrive) só funciona no Chrome ou no Edge, abrindo o `index.html` direto no computador.
 
 ## O que o protótipo faz
 
@@ -21,13 +23,27 @@ Os botões de download (documentos anexados e ficha do colaborador) só funciona
 - Registro de embarque: escolhe-se o colaborador, a data de embarque e os dias embarcados, e o sistema calcula a folga conquistada, o último dia a bordo e o próximo embarque.
 - Tabela "Equipe hoje" com a situação de cada pessoa e o ponto em que está no ciclo.
 - Botão **Dobra** para somar dias a um embarque em andamento.
+- Histórico por colaborador e período, com exportação para Excel e PDF.
+
+**Barcos**
+- Cadastro de barcos (nome, tipo e observações).
+- Para cada barco: quem está a bordo hoje, próximos embarques em 30 dias e quem está de férias.
+
+**Cursos e ASO**
+- Gráficos por situação de validade. Os ASOs têm faixas de 60 e 90 dias.
+- Cadastro de curso ou ASO com validade e certificado anexado.
 
 **Colaboradores**
-- Lista com busca, situação na escala e situação dos cursos.
-- Cadastro com nome completo, RG, CPF, passaporte, nome da mãe, nome do pai (opcional), e-mail, celular, setor, contato de emergência e endereço.
-- Botão de anexo em cada campo e um campo para outros documentos.
+- Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
+- Ficha dividida em seções: Dados pessoais, Cursos, Embarques e Vacinas.
+- Clipe de anexo ao lado de cada campo. Os documentos obrigatórios do setor ficam marcados nos próprios campos, com contador de pendências em cada seção.
+- Na seção Embarques: barco, escala, férias e a lista de todos os embarques do colaborador.
+- Na seção Vacinas: Covid-19, DT e febre amarela, com data e comprovante.
 - "Pasta" do colaborador com os dados e os documentos anexados.
-- Para o setor **Ambiental**, a escala (data de embarque e dias) é obrigatória e os campos só aparecem quando esse setor é escolhido.
+- Para o setor **Ambiental**, a escala (barco, data de embarque e dias) é obrigatória e os cursos obrigatórios do setor aparecem automaticamente.
+
+**Aparência**
+- Tema claro e escuro automático e controle de transparência das janelas.
 
 ## Regras assumidas
 
@@ -41,14 +57,21 @@ Essas regras precisam ser confirmadas com as regras reais da empresa.
 
 ## Limitações conhecidas
 
-- Dados salvos só no navegador (cada pessoa vê apenas o que lançou), com limite de espaço. Anexos de até 1 MB cada.
+- Dados salvos só no navegador (cada pessoa vê apenas o que lançou). Anexos de até 20 MB cada, guardados no armazenamento do navegador.
 - Sem login nem controle de acesso.
-- Os cursos ainda são dados de exemplo: falta o cadastro de cursos por colaborador pela própria página.
-- A "pasta" do colaborador é uma visão dentro do sistema, não uma pasta real em disco ou servidor.
+- Cursos, setores e documentos obrigatórios estão fixos no código.
+- Remover um colaborador apaga também os cursos dele, sem histórico.
 
-## Próximos passos sugeridos
+## Próximos passos
 
-1. Cadastro de cursos por colaborador, com atualização de validade.
-2. Importação das planilhas de Excel atuais.
-3. Filtros por embarcação ou unidade e linha do tempo de embarques.
-4. Sistema completo com servidor, banco de dados compartilhado, login e senha próprios, perfis de acesso e armazenamento seguro de documentos, com hospedagem aprovada pela TI e atenção à LGPD.
+Sistema definitivo hospedado no Azure (região Brazil South):
+
+- **Front end:** React com TypeScript no Azure Static Web Apps.
+- **Back end:** API em .NET no Azure App Service.
+- **Banco de dados:** Azure SQL Database.
+- **Documentos:** Azure Blob Storage privado.
+- **Login:** Microsoft Entra ID (contas Microsoft 365 da empresa), com perfis de acesso.
+- **Avisos de vencimento por e-mail:** tarefa diária no Azure Functions.
+- **LGPD:** trilha de auditoria; ASO e vacinação tratados como dados sensíveis.
+
+Regras de escala configuráveis pelo RH, com data de início de vigência para não alterar o histórico.
