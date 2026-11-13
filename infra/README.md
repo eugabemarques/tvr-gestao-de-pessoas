@@ -19,7 +19,37 @@ powershell -ExecutionPolicy Bypass -File infra\entra\configurar-microsoft365.ps1
 
 O script pode ser rodado de novo para incluir pessoas. No fim, ele grava `toveri-microsoft365.json` com os IDs que o sistema usa. Nenhum desses dados é senha.
 
-## Azure (a fazer)
+## Produção atual
+
+| Item | Valor |
+|---|---|
+| Endereço | https://toveri-gestao-pessoas.azurewebsites.net |
+| App Service | `toveri-gestao-pessoas` (Linux, .NET 10), no plano B2 existente `asp-toveri-portal-prod`, grupo `rg-toveri-portal-prod`, Brazil South |
+| Telas | React (`frontend/`), compiladas dentro da API (`wwwroot`) |
+| Dados | SQLite em `/home/dados` (persistente) + arquivos em `/home/dados/arquivos` |
+| Login | "Entrar com Microsoft", aplicativo do Entra **TOVERI Gestão de Pessoas - Site** (sem segredo), igual ao Portal de Projetos |
+
+**App Settings** (não são senhas):
+
+| Nome | Para quê |
+|---|---|
+| `Toveri__EntraClientId` | ID do aplicativo de login no Entra |
+| `Toveri__EntraTenantId` | locatário da TOVERI |
+| `Toveri__Acesso` | e-mails liberados, separados por `;` |
+| `Toveri__Dados` | `/home/dados` |
+
+Para liberar alguém, inclua o e-mail em `Toveri__Acesso` (Azure Portal > toveri-gestao-pessoas > Variáveis de ambiente). O app reinicia sozinho.
+
+### Publicar
+
+```
+pwsh -File infra\publicar.ps1
+```
+
+Compila e testa telas e back end, gera o pacote e envia para o App Service. Requer Node.js, .NET SDK 10 e `az login`.
+Não mexa nas configurações do app enquanto a publicação roda.
+
+## Azure (definitivo, a fazer)
 
 Recursos descritos em Bicep, na região Brazil South:
 

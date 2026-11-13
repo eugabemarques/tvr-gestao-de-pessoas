@@ -8,8 +8,8 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 |---|---|
 | `index.html` | Protótipo das telas (página única, sem servidor) |
 | `backend/` | API em .NET 10, regras de negócio e banco de dados ([detalhes](backend/README.md)) |
-| `frontend/` | Telas em React (ainda não iniciado) |
-| `infra/` | Recursos do Azure (ainda não iniciado) |
+| `frontend/` | Telas em React, ligadas à API ([detalhes](frontend/README.md)) |
+| `infra/` | Publicação no Azure e liberação no Microsoft 365 ([detalhes](infra/README.md)) |
 | `docs/` | [Regras de negócio](docs/regras-de-negocio.md) |
 | `referencia/servidor-python/` | Primeiro servidor do protótipo, usado como especificação |
 
