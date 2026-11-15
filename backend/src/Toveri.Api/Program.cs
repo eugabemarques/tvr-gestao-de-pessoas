@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Toveri.Dominio;
+using Toveri.Api.Compartilhado;
 using Toveri.Dominio.Escala;
 using Toveri.Infraestrutura;
 
@@ -9,14 +11,42 @@ var conexao = builder.Configuration.GetConnectionString("Toveri");
 if (!string.IsNullOrWhiteSpace(conexao))
     builder.Services.AddDbContext<ToveriDbContext>(o => o.UseSqlServer(conexao));
 
+// Dados compartilhados das telas (ver Compartilhado/EstadoCompartilhado.cs). No Azure: Toveri__Dados=/home/dados.
+var pastaDados = builder.Configuration["Toveri:Dados"] ?? Path.Combine(builder.Environment.ContentRootPath, "dados");
+builder.Services.AddSingleton(new EstadoCompartilhado(pastaDados));
+// Cópia dos cadastros para a pasta do RH no SharePoint (ver Compartilhado/EnvioSharePoint.cs).
+builder.Services.AddSingleton<EnvioSharePoint>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<EnvioSharePoint>());
+builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 25 * 1024 * 1024);
+
+// Login igual ao do Portal de Projetos: "Entrar com Microsoft" + lista de e-mails liberados.
+builder.AddLoginMicrosoft(pastaDados);
+// O App Service termina o https na frente; sem isso o retorno do login sairia como http.
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseProtecaoDaApi();
+app.MapLoginMicrosoft();
 
-// Etapa 2: login com Microsoft Entra ID e perfis de acesso.
-// Até lá, a API só tem rotas que não envolvem dados pessoais.
+// Telas (React, compiladas em wwwroot). O index.html nunca fica em cache, para cada publicação valer na hora.
+app.UseDefaultFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = c => c.Context.Response.Headers.CacheControl =
+        c.File.Name == "index.html" ? "no-store" : "public, max-age=31536000, immutable",
+});
 
 app.MapGet("/api/saude", () => Results.Ok(new { status = "ok" }));
+app.MapRotasCompartilhadas();
 
 // Mesmo cálculo da tela "Registrar embarque" do protótipo.
 app.MapPost("/api/escala/simular", (SimulacaoEmbarque s) =>
@@ -60,7 +90,23 @@ app.MapPost("/api/escala/simular", (SimulacaoEmbarque s) =>
     }
 });
 
+// Qualquer outro caminho que não seja da API abre as telas (navegação do React).
+app.MapFallback(async ctx =>
+{
+    var index = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "index.html");
+    if (ctx.Request.Path.StartsWithSegments("/api") || !File.Exists(index))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    ctx.Response.ContentType = "text/html; charset=utf-8";
+    ctx.Response.Headers.CacheControl = "no-store";
+    await ctx.Response.SendFileAsync(index);
+});
+
 app.Run();
+
+public partial class Program;
 
 public sealed record SimulacaoEmbarque(
     DateOnly Inicio,

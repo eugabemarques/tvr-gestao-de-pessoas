@@ -43,3 +43,18 @@ A conexão vem de `ConnectionStrings:Toveri`. Sem ela, a API sobe sem banco. Em 
 - Rotas de colaboradores, embarques, cursos e documentos, com auditoria.
 - Gravação de documentos no SharePoint via Microsoft Graph.
 - Migrações do banco e ambiente de desenvolvimento no Azure SQL.
+
+## Dados compartilhados e login (em produção)
+
+Enquanto as rotas de cada cadastro não usam o banco definitivo, as telas gravam pelo mesmo protocolo do servidor de referência em Python (`Compartilhado/`):
+
+| Rota | O que faz |
+|---|---|
+| `GET /api/me` | Usuário conectado |
+| `GET /api/estado` · `GET /api/estado/versao` | Dados compartilhados e versão |
+| `POST /api/estado/patch` | Grava alterações registro a registro (cabeçalho `X-Toveri: 1`) |
+| `POST /api/arquivos` · `GET /api/arquivos/{id}` | Envia e baixa documentos (PDF ou imagem, até 20 MB) |
+
+Tudo fica num SQLite em `Toveri:Dados` (no Azure, `/home/dados`), com auditoria de alterações e de arquivos abertos.
+
+Login (`Compartilhado/LoginMicrosoft.cs`): tela `/entrar` com "Entrar com Microsoft" (Entra ID, só contas da TOVERI) e lista de e-mails liberados em `Toveri:Acesso`. Em desenvolvimento, sem `Toveri:EntraClientId`, entra como `Toveri:UsuarioDev`. Rode a API e, em outro terminal, `npm run dev` em `frontend/`.
