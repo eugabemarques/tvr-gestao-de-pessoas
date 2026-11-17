@@ -39,10 +39,9 @@ A conexão vem de `ConnectionStrings:Toveri`. Sem ela, a API sobe sem banco. Em 
 
 ## Próxima etapa
 
-- Login com Microsoft Entra ID e perfis de acesso (Admin RH, RH, Gestor).
-- Rotas de colaboradores, embarques, cursos e documentos, com auditoria.
-- Gravação de documentos no SharePoint via Microsoft Graph.
+- Rotas de colaboradores, embarques, cursos e documentos gravando no Azure SQL, com auditoria (hoje as telas usam os dados compartilhados em SQLite, descritos abaixo).
 - Migrações do banco e ambiente de desenvolvimento no Azure SQL.
+- Perfis Admin RH e RH (hoje com as mesmas permissões) aplicados às rotas.
 
 ## Dados compartilhados e login (em produção)
 

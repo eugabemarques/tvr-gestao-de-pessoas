@@ -2,37 +2,37 @@
 
 Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cursos e ASO e os documentos dos colaboradores.
 
+**Em produção:** https://toveri-gestao-pessoas.azurewebsites.net (login com a conta Microsoft da TOVERI; acesso só para e-mails liberados).
+
+## Situação atual
+
+| Parte | Situação |
+|---|---|
+| Telas | React + TypeScript, portadas do protótipo, servidas pela própria API |
+| Back end | API em .NET 10 no Azure App Service (Brazil South) |
+| Login | "Entrar com Microsoft" (Entra ID, só contas da TOVERI) + lista de e-mails liberados |
+| Dados | Compartilhados entre todos os usuários (SQLite no App Service), com auditoria de alterações e de arquivos abertos |
+| Documentos | Anexos de até 20 MB (PDF ou imagem), com cópia automática para a pasta do RH no SharePoint |
+| Regras de escala | Regras confirmadas pelo RH implementadas e testadas no back end, configuráveis por vigência; ainda não ligadas às telas (ver abaixo) |
+| Testes | Back end (xUnit) e telas (Vitest); os do back end rodam no GitHub a cada envio |
+
 ## Estrutura do repositório
 
 | Pasta | Conteúdo |
 |---|---|
-| `index.html` | Protótipo das telas (página única, sem servidor) |
-| `backend/` | API em .NET 10, regras de negócio e banco de dados ([detalhes](backend/README.md)) |
 | `frontend/` | Telas em React, ligadas à API ([detalhes](frontend/README.md)) |
+| `backend/` | API em .NET 10, regras de negócio e banco de dados ([detalhes](backend/README.md)) |
 | `infra/` | Publicação no Azure e liberação no Microsoft 365 ([detalhes](infra/README.md)) |
 | `docs/` | [Regras de negócio](docs/regras-de-negocio.md) |
+| `index.html` | Protótipo original (página única, sem servidor), mantido como referência |
 | `referencia/servidor-python/` | Primeiro servidor do protótipo, usado como especificação |
 
-## Protótipo
-
-O protótipo é uma página única (`index.html`), sem servidor e sem instalação.
-
-> **Atenção:** este é um protótipo de validação. Os dados ficam salvos apenas no navegador de quem usa e **não há login**. Use somente dados fictícios. Não coloque CPF, RG, passaporte ou documentos reais aqui.
-
-## Como abrir
-
-Baixe o `index.html` e abra no navegador (duplo clique). Não precisa instalar nada.
-
-Os downloads (documentos anexados, ficha do colaborador, Excel e PDF) funcionam tanto na versão publicada quanto abrindo o arquivo direto no navegador.
-
-A opção **Pasta no computador** (salvar a pasta de cada colaborador numa pasta local, por exemplo no OneDrive) só funciona no Chrome ou no Edge, abrindo o `index.html` direto no computador.
-
-## O que o protótipo faz
+## O que o sistema faz
 
 **Painel**
 - Resumo: embarcados hoje, de folga hoje, cursos vencidos e cursos que vencem em até 90 dias.
 - Gráfico de cursos por situação (vencidos, vencem em até 90 dias, em dia). Clicar numa coluna expande a lista de cursos daquela situação.
-- Ícone de sino com os avisos do sistema: cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias. Cada aviso pode ser marcado como **Resolvido** (e reaberto depois).
+- Ícone de sino com os avisos: cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias. Cada aviso pode ser marcado como **Resolvido** (e reaberto depois).
 
 **Embarques**
 - Registro de embarque: escolhe-se o colaborador, a data de embarque e os dias embarcados, e o sistema calcula a folga conquistada, o último dia a bordo e o próximo embarque.
@@ -52,45 +52,48 @@ A opção **Pasta no computador** (salvar a pasta de cada colaborador numa pasta
 - Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
 - Ficha dividida em seções: Dados pessoais, Cursos, Embarques e Vacinas.
 - Clipe de anexo ao lado de cada campo. Os documentos obrigatórios do setor ficam marcados nos próprios campos, com contador de pendências em cada seção.
-- Na seção Embarques: barco, escala, férias e a lista de todos os embarques do colaborador.
-- Na seção Vacinas: Covid-19, DT e febre amarela, com data e comprovante.
-- "Pasta" do colaborador com os dados e os documentos anexados.
 - Para o setor **Ambiental**, a escala (barco, data de embarque e dias) é obrigatória e os cursos obrigatórios do setor aparecem automaticamente.
 
-**Aparência**
-- Tema claro e escuro automático e controle de transparência das janelas.
+**SharePoint**
+- A ficha (`Cadastro.txt`) e os anexos de cada colaborador são copiados para `RH - Administrativo/API - Gestão de Pessoas/<Nome>`.
+- A cópia usa a identidade gerenciada do Azure com permissão só nesse site (sem senha guardada), tenta de novo a cada minuto se falhar e nunca apaga nada no SharePoint.
 
-## Regras assumidas
+## Regras de escala
 
-- Escala 42x42: 42 dias embarcado e 42 dias de folga.
-- Folga de 1 dia para cada dia embarcado, inclusive nos dias de dobra.
-- O dia do embarque conta como o dia 1.
-- Depois de uma dobra, os ciclos seguintes voltam ao padrão de 42 dias.
-- Os cursos vencem em 3 situações: vencido, vence em até 90 dias e em dia.
+Detalhes em [docs/regras-de-negocio.md](docs/regras-de-negocio.md).
 
-Essas regras precisam ser confirmadas com as regras reais da empresa.
+**Em uso nas telas** (vindas do protótipo):
+- Escala 42x42: 42 dias embarcado e 42 dias de folga; o dia do embarque conta como dia 1.
+- Folga de 1 dia para cada dia embarcado, inclusive nos dias de dobra. Depois de uma dobra, os ciclos seguintes voltam ao padrão.
 
-## Limitações conhecidas
+**Já implementadas no back end, ainda não ligadas às telas** (respostas do RH):
+- Folga não gozada vira saldo compensado depois (a compensação adia o próximo embarque).
+- Quem ainda não tem embarque previsto aparece como **Aguardando**.
+- ASO obrigatório para todos a partir da admissão.
+- Regras com data de início de vigência, para mudanças não alterarem o histórico.
 
-- Dados salvos só no navegador (cada pessoa vê apenas o que lançou). Anexos de até 20 MB cada, guardados no armazenamento do navegador.
-- Sem login nem controle de acesso.
-- Cursos, setores e documentos obrigatórios estão fixos no código.
-- Remover um colaborador apaga também os cursos dele, sem histórico.
+## Acesso
+
+Perfis **Admin RH** e **RH**, hoje com as mesmas permissões. Para liberar alguém, veja [infra/README.md](infra/README.md).
+
+## Publicar
+
+```
+pwsh -File infra\publicar.ps1
+```
+
+Compila e testa telas e back end e envia para o App Service. Requer Node.js, .NET SDK 10 e `az login` no locatário da TOVERI. Detalhes em [infra/README.md](infra/README.md).
 
 ## Próximos passos
 
-Sistema definitivo hospedado no Azure (região Brazil South):
-
-- **Front end:** React com TypeScript no Azure Static Web Apps.
-- **Back end:** API em .NET no Azure App Service.
-- **Banco de dados:** Azure SQL Database.
-- **Documentos:** SharePoint da empresa via Microsoft Graph, com uma pasta por colaborador (exige um aplicativo registrado pelo administrador do Microsoft 365).
-- **Login:** Microsoft Entra ID (contas Microsoft 365 da empresa), com perfis de acesso.
+- **Banco de dados:** trocar o SQLite atual pelo Azure SQL Database (o modelo com Entity Framework já está no back end).
+- **Regras do RH nas telas:** usar as regras do back end (compensação, Aguardando, ASO após admissão) e permitir que o RH as ajuste, com data de início de vigência.
+- **Infraestrutura como código:** recursos do Azure descritos em Bicep, com Key Vault e Application Insights.
 - **Avisos de vencimento por e-mail:** tarefa diária no Azure Functions.
-- **LGPD:** trilha de auditoria; ASO e vacinação tratados como dados sensíveis.
+- **LGPD:** ASO e vacinação tratados como dados sensíveis.
 
-Regras de escala configuráveis pelo RH, com data de início de vigência para não alterar o histórico.
+## Protótipo e servidor de referência
 
-## Servidor de referência
+O `index.html` na raiz é o protótipo original: abre direto no navegador, sem login, e guarda os dados só no navegador de quem usa. Use somente dados fictícios nele.
 
-A pasta `referencia/servidor-python/` guarda o primeiro servidor do protótipo (Python, FastAPI e SQLite), com login próprio, dados compartilhados, arquivos e auditoria. Ele serve de especificação para a versão em .NET e **não será publicado no Azure**. Instruções de uso estão no README da própria pasta.
+A pasta `referencia/servidor-python/` guarda o primeiro servidor do protótipo (Python, FastAPI e SQLite). Ele serve de especificação para a versão em .NET e **não é publicado no Azure**.
