@@ -24,3 +24,7 @@ export const ouvirToast = (f: OuvinteToast): (() => void) => {
   ouvintesToast.add(f);
   return () => ouvintesToast.delete(f);
 };
+
+/* ---------- perfil de quem está usando ---------- */
+/** Perfil Admin RH (definido no início, a partir de /api/me): só ele corrige ou apaga embarques já registrados. */
+export const perfil = { admin: false };

@@ -2,11 +2,13 @@ using System.Text.Json.Nodes;
 
 namespace Toveri.Api.Compartilhado;
 
-public sealed record UsuarioToveri(string Login, string Nome);
+/// <summary>Usuário do sistema. <c>Admin</c> = perfil Admin RH (corrige e apaga embarques já registrados).</summary>
+public sealed record UsuarioToveri(string Login, string Nome, bool Admin = false);
 
 /// <summary>
 /// Quem está usando: a conta Microsoft que entrou (cookie de sessão do próprio sistema, ver LoginMicrosoft),
-/// desde que o e-mail esteja na lista liberada. Em desenvolvimento, sem login configurado, usa <c>Toveri:UsuarioDev</c>.
+/// desde que o e-mail esteja na lista liberada. Em desenvolvimento, sem login configurado, usa <c>Toveri:UsuarioDev</c>
+/// (Admin RH, a não ser que <c>Toveri:UsuarioDevAdmin</c> seja false, para testar o perfil RH).
 /// </summary>
 public static class Identidade
 {
@@ -18,12 +20,12 @@ public static class Identidade
         {
             var email = LoginMicrosoft.Email(ctx.User);
             if (email is null) return (Situacao.SemAcesso, new UsuarioToveri("?", "?"));
-            var u = new UsuarioToveri(email, ctx.User.FindFirst("name")?.Value ?? email);
+            var u = new UsuarioToveri(email, ctx.User.FindFirst("name")?.Value ?? email, LoginMicrosoft.AdminRH(cfg, email));
             return (LoginMicrosoft.Liberado(cfg, email) ? Situacao.Liberado : Situacao.SemAcesso, u);
         }
         var dev = cfg["Toveri:UsuarioDev"];
         if (env.IsDevelopment() && !string.IsNullOrWhiteSpace(dev) && !LoginMicrosoft.LoginConfigurado(cfg))
-            return (Situacao.Liberado, new UsuarioToveri(dev, dev));
+            return (Situacao.Liberado, new UsuarioToveri(dev, dev, !string.Equals(cfg["Toveri:UsuarioDevAdmin"], "false", StringComparison.OrdinalIgnoreCase)));
         return (Situacao.SemLogin, null);
     }
 }
@@ -93,7 +95,7 @@ public static class RotasCompartilhadas
         api.MapGet("/me", (HttpContext ctx) =>
         {
             var u = ctx.Usuario();
-            return Results.Ok(new { login = u.Login, nome = u.Nome, admin = true });
+            return Results.Ok(new { login = u.Login, nome = u.Nome, admin = u.Admin });
         });
 
         api.MapGet("/estado", (EstadoCompartilhado e) =>
@@ -113,13 +115,15 @@ public static class RotasCompartilhadas
                 return Results.BadRequest(new { erro = "Alteração inválida." });
             if (ops.Count > 5000)
                 return Results.Json(new { erro = "Alteração grande demais." }, statusCode: StatusCodes.Status413PayloadTooLarge);
-            var (dados, versao) = await e.GravarPatch(ops, ctx.Usuario().Login);
+            var (dados, versao, bloqueadas) = await e.GravarPatch(ops, ctx.Usuario().Login, ctx.Usuario().Admin);
             // Copia para a pasta do RH no SharePoint as fichas e anexos de quem foi alterado.
             var ids = ops.OfType<JsonObject>().Where(o => o["c"]?.ToString() == "people" && o["v"] is not null)
                 .Select(o => o["k"]?.ToString()).ToHashSet();
             if (ids.Count > 0)
                 sp.Agendar((dados["people"] as JsonArray ?? []).Where(p => ids.Contains(p?["id"]?.ToString())));
-            return Results.Json(new JsonObject { ["versao"] = versao, ["dados"] = dados });
+            var resp = new JsonObject { ["versao"] = versao, ["dados"] = dados };
+            if (bloqueadas > 0) resp["bloqueado"] = bloqueadas;
+            return Results.Json(resp);
         });
 
         api.MapPost("/arquivos", async (HttpContext ctx, EstadoCompartilhado e) =>

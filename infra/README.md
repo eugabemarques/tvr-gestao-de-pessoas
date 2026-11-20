@@ -36,9 +36,10 @@ O script pode ser rodado de novo para incluir pessoas. No fim, ele grava `toveri
 | `Toveri__EntraClientId` | ID do aplicativo de login no Entra |
 | `Toveri__EntraTenantId` | locatário da TOVERI |
 | `Toveri__Acesso` | e-mails liberados, separados por `;` |
+| `Toveri__AdminRH` | e-mails do perfil **Admin RH**, separados por `;` (precisam estar também em `Toveri__Acesso`). Só eles corrigem ou apagam embarques já registrados. Vazio = ninguém |
 | `Toveri__Dados` | `/home/dados` |
 
-Para liberar alguém, inclua o e-mail em `Toveri__Acesso` (Azure Portal > toveri-gestao-pessoas > Variáveis de ambiente). O app reinicia sozinho.
+Para liberar alguém, inclua o e-mail em `Toveri__Acesso` (Azure Portal > toveri-gestao-pessoas > Variáveis de ambiente). O app reinicia sozinho. Para dar o perfil Admin RH, inclua o e-mail também em `Toveri__AdminRH`.
 
 ### Publicar
 

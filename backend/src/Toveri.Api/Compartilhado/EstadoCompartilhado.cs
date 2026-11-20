@@ -90,7 +90,12 @@ public sealed class EstadoCompartilhado
 
     public long Versao() => Ler().Versao;
 
-    public async Task<(JsonNode Dados, long Versao)> GravarPatch(JsonArray ops, string usuario)
+    /// <summary>
+    /// Aplica e grava um patch. Sem <paramref name="podeCorrigirHistorico"/> (quem não é Admin RH), alterações em
+    /// embarques antigos são descartadas (ver <see cref="FiltrarHistorico"/>) e contadas em <c>Bloqueadas</c>.
+    /// Toda correção de embarque já registrado fica na auditoria com o valor antigo e o novo.
+    /// </summary>
+    public async Task<(JsonNode Dados, long Versao, int Bloqueadas)> GravarPatch(JsonArray ops, string usuario, bool podeCorrigirHistorico = true)
     {
         await _trava.WaitAsync();
         try
@@ -108,6 +113,8 @@ public sealed class EstadoCompartilhado
                 versao = r.GetInt64(1);
             }
             var estado = (texto is null ? null : JsonNode.Parse(texto)) as JsonObject ?? Vazio();
+            var (permitidas, bloqueadas, correcoes) = FiltrarHistorico(estado, ops, podeCorrigirHistorico);
+            ops = permitidas;
             Aplicar(estado, ops);
             var nova = versao + 1;
             using (var cmd = c.CreateCommand())
@@ -121,11 +128,63 @@ public sealed class EstadoCompartilhado
                 cmd.ExecuteNonQuery();
             }
             Auditar(c, tx, usuario, "alterou dados", Resumo(ops));
+            foreach (var corr in correcoes) Auditar(c, tx, usuario, "corrigiu embarque", corr);
+            if (bloqueadas.Count > 0)
+                Auditar(c, tx, usuario, "bloqueado: correção de embarque só para Admin RH", new JsonArray(bloqueadas.Select(b => (JsonNode?)b.DeepClone()).ToArray()));
             tx.Commit();
-            return (estado, nova);
+            return (estado, nova, bloqueadas.Count);
         }
         finally { _trava.Release(); }
     }
+
+    /// <summary>
+    /// Separa as alterações do histórico de embarques. Incluir um embarque novo e ajustar o mais recente do
+    /// colaborador (dobra, translado, novo registro na mesma data) é rotina do RH; alterar um embarque anterior
+    /// ou apagar qualquer embarque registrado é correção, permitida só ao Admin RH.
+    /// Devolve as operações permitidas, as bloqueadas e, para a auditoria, cada correção com o valor antigo e o novo.
+    /// </summary>
+    public static (JsonArray Permitidas, List<JsonObject> Bloqueadas, List<JsonObject> Correcoes) FiltrarHistorico(
+        JsonObject estado, JsonArray ops, bool podeCorrigir)
+    {
+        var permitidas = new JsonArray();
+        var bloqueadas = new List<JsonObject>();
+        var correcoes = new List<JsonObject>();
+        var hist = (estado["hist"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+        foreach (var o in ops.OfType<JsonObject>())
+        {
+            if (Texto(Campo(o, "c")) != "hist")
+            {
+                permitidas.Add(o.DeepClone());
+                continue;
+            }
+            var substituiTudo = Verdadeiro(Campo(o, "w"));
+            var k = Texto(Campo(o, "k"));
+            var antes = substituiTudo ? null : hist.FirstOrDefault(h => Texto(Campo(h, "pid")) + "|" + Texto(Campo(h, "ini")) == k);
+            var depois = Campo(o, "v");
+            var correcao = substituiTudo || (antes is not null && (depois is null || !EhMaisRecente(hist, antes)));
+            if (correcao && !podeCorrigir)
+            {
+                bloqueadas.Add((JsonObject)o.DeepClone());
+                continue;
+            }
+            if (antes is not null && !JsonNode.DeepEquals(antes, depois))
+                correcoes.Add(new JsonObject { ["antes"] = antes.DeepClone(), ["depois"] = depois?.DeepClone() });
+            permitidas.Add(o.DeepClone());
+        }
+        return (permitidas, bloqueadas, correcoes);
+    }
+
+    /// <summary>O embarque é o mais recente (maior data de início) do colaborador?</summary>
+    private static bool EhMaisRecente(List<JsonObject> hist, JsonObject h)
+    {
+        var pid = Texto(Campo(h, "pid"));
+        var ini = Numero(Campo(h, "ini"));
+        return !hist.Any(x => Texto(Campo(x, "pid")) == pid && Numero(Campo(x, "ini")) > ini);
+    }
+
+    private static double Numero(JsonNode? n) =>
+        n is JsonValue v && v.GetValueKind() == JsonValueKind.Number ? v.GetValue<double>()
+        : double.TryParse(Texto(n), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : double.NaN;
 
     public static JsonObject Vazio() => new()
     {

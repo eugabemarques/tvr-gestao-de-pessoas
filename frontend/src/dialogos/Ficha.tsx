@@ -1,7 +1,7 @@
 /** Ficha do colaborador: dados pessoais, cursos e ASO, embarques, vacinas e fichas internas (Docs Toveri), com anexos por campo. */
-import { useRef, useState, type ReactNode } from "react";
+import { Fragment, useRef, useState, type ReactNode } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
-import { IcAncora, IcClipe, IcDados, IcFechar, IcLivro, IcOk, IcPasta, IcPessoa, IcVacina } from "../componentes/Icones";
+import { IcAncora, IcClipe, IcDados, IcFechar, IcLapis, IcLivro, IcLixeira, IcOk, IcPasta, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
 import { diaIso, fmt, toDay } from "../dominio/datas";
 import { extrairDoDocumento, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
@@ -22,11 +22,24 @@ import {
   type LinhaCurso,
   type SecaoFicha,
 } from "../dominio/documentos";
-import { etapasPeriodo, nomeBarco, periodos, pessoa, situacaoPeriodo, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
+import {
+  apagarEmbarque,
+  corrigirEmbarque,
+  erroCorrecao,
+  etapasPeriodo,
+  nomeBarco,
+  periodos,
+  pessoa,
+  situacaoPeriodo,
+  TI_PADRAO,
+  TV_PADRAO,
+  type CorrecaoEmbarque,
+  type Periodo,
+} from "../dominio/escala";
 import { iniciais, unesc } from "../dominio/texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "../dominio/tipos";
 import { ANOS_NORUEGUES, courseState, isExame, NORUEGUES, stAso, validadeNoruegues } from "../dominio/validade";
-import { loja, T, toast, useEstado } from "../loja";
+import { loja, perfil, T, toast, useEstado } from "../loja";
 import { guardar } from "../servidor/api";
 
 type Secao = SecaoFicha | "embarques" | "toveri";
@@ -113,11 +126,111 @@ function Anexar({ ctx, anexo }: { ctx: Ctx; anexo: string }) {
   );
 }
 
-function EmbarquesFicha({ S, p }: { S: Estado; p: Pessoa | undefined }) {
+/** Campos da correção de um embarque registrado (datas como na tela Registrar embarque). */
+interface FormCorrecao {
+  data: string;
+  dias: string;
+  dobra: string;
+  ida: string;
+  volta: string;
+  barco: string;
+}
+
+const formCorrecao = (x: Periodo): FormCorrecao => {
+  const e = etapasPeriodo(x);
+  return { data: diaIso(x.ini), dias: String(x.dias), dobra: String(x.dobra || 0), ida: diaIso(e.ida), volta: diaIso(e.volta), barco: x.boat != null ? String(x.boat) : "" };
+};
+
+/** Muda um campo da correção; ao mudar a data de embarque, os translados acompanham (mesma distância). */
+function mudarCorrecao(c: FormCorrecao, k: keyof FormCorrecao, v: string): FormCorrecao {
+  const n = { ...c, [k]: v };
+  if (k === "data" && c.data && v) {
+    const d = toDay(v) - toDay(c.data);
+    if (Number.isFinite(d) && d) {
+      if (c.ida) n.ida = diaIso(toDay(c.ida) + d);
+      if (c.volta) n.volta = diaIso(toDay(c.volta) + d);
+    }
+  }
+  return n;
+}
+
+/** Leva a linha em edição (ou a confirmação) para a vista e, se pedido, põe o foco num campo. */
+const mostrarEdicao = (foco?: string) =>
+  setTimeout(() => {
+    const l = document.querySelectorAll("#fembs tr.emb-ed");
+    l[l.length - 1]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (foco) (document.querySelector(foco) as HTMLElement | null)?.focus({ preventScroll: true });
+  }, 0);
+
+function lerCorrecao(c: FormCorrecao): CorrecaoEmbarque {
+  const ini = c.data ? toDay(c.data) : NaN,
+    dias = Number(c.dias),
+    dobra = c.dobra.trim() ? Number(c.dobra) : 0;
+  return {
+    ini,
+    dias,
+    dobra,
+    boat: c.barco ? +c.barco : null,
+    ti: c.ida ? ini - toDay(c.ida) : TI_PADRAO,
+    tv: c.volta ? toDay(c.volta) - (ini + dias + dobra - 1) : TV_PADRAO,
+  };
+}
+
+/**
+ * Embarques do colaborador. O Admin RH pode corrigir ou apagar os já registrados (os previstos vêm da escala);
+ * a correção é gravada na hora e fica na auditoria do servidor com o valor antigo e o novo.
+ */
+function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined; aoAlterar: () => void }) {
+  const [editando, setEditando] = useState<number | null>(null);
+  const [fc, setFc] = useState<FormCorrecao | null>(null);
+  const [erroC, setErroC] = useState("");
+  const [apagando, setApagando] = useState<number | null>(null);
   if (!p) return <p className="empty">Salve o colaborador para ver os embarques.</p>;
   if (p.embark == null) return <p className="empty">Sem escala definida.</p>;
   const per = periodos(p, S.hist, T + 120);
   if (!per.length) return <p className="empty">Nenhum embarque registrado.</p>;
+  const admin = perfil.admin;
+  const registrados = per.filter((x) => x.src === "Registrado").length;
+  const cols = admin ? 7 : 6;
+
+  const abrir = (x: Periodo) => {
+    setApagando(null);
+    setErroC("");
+    setEditando(x.ini);
+    setFc(formCorrecao(x));
+    mostrarEdicao("#cedata");
+  };
+  const fechar = () => {
+    setEditando(null);
+    setFc(null);
+    setErroC("");
+  };
+  const salvar = () => {
+    if (editando == null || !fc) return;
+    const c = lerCorrecao(fc);
+    const er = erroCorrecao(S, p.id, editando, c);
+    if (er) return setErroC(er);
+    loja.mutar((E) => corrigirEmbarque(E, p.id, editando, c));
+    fechar();
+    aoAlterar();
+    toast("Embarque corrigido.");
+  };
+  const apagar = (ini: number) => {
+    const ok = loja.mutar((E) => apagarEmbarque(E, p.id, ini));
+    setApagando(null);
+    if (!ok) return toast("O colaborador precisa ter ao menos um embarque registrado. Corrija-o em vez de apagar.");
+    aoAlterar();
+    toast("Embarque apagado.");
+  };
+  const campo = (k: keyof FormCorrecao, rotulo: string, tipo: "date" | "number") => (
+    <div className="ff">
+      <label htmlFor={"ce" + k}>{rotulo}</label>
+      <div className="fin">
+        <input id={"ce" + k} type={tipo} min={tipo === "number" ? 0 : undefined} value={fc ? fc[k] : ""} onChange={(e) => fc && setFc(mudarCorrecao(fc, k, e.target.value))} />
+      </div>
+    </div>
+  );
+
   return (
     <table>
       <thead>
@@ -128,43 +241,127 @@ function EmbarquesFicha({ S, p }: { S: Estado; p: Pessoa | undefined }) {
           <th>Folga até</th>
           <th>Barco</th>
           <th>Situação</th>
+          {admin ? <th aria-label="Ações" /> : null}
         </tr>
       </thead>
       <tbody>
         {per.map((x, i) => {
           const e = etapasPeriodo(x),
-            s = situacaoPeriodo(x, T);
+            s = situacaoPeriodo(x, T),
+            reg = x.src === "Registrado",
+            ord = i + 1 + "º";
           return (
-            <tr key={i}>
-              <td>
-                <b>{i + 1 + "º"}</b>
-              </td>
-              <td>
-                {fmt(x.ini) + " a " + fmt(e.ultimoBordo)}
-                <div className="mute">
-                  {x.src + " · translado " + fmt(e.ida) + (e.volta > e.ultimoBordo ? " e " + fmt(e.volta) : "")}
-                </div>
-              </td>
-              <td>
-                {e.A}
-                {x.dobra ? <div className="mute">{"dobra +" + x.dobra}</div> : null}
-              </td>
-              <td>{fmt(e.folgaFim)}</td>
-              <td>{unesc(nomeBarco(S, x.boat)) || <span className="mute">—</span>}</td>
-              <td>
-                {s === "Previsto" ? (
-                  <Chip k="warn">Previsto</Chip>
-                ) : s === "Translado" ? (
-                  <Chip k="warn">Translado</Chip>
-                ) : s === "Embarcado" ? (
-                  <Chip k="sea">Embarcado</Chip>
-                ) : s === "Folga" ? (
-                  <Chip k="ok">Folga</Chip>
-                ) : (
-                  <span className="mute">Concluído</span>
-                )}
-              </td>
-            </tr>
+            <Fragment key={i}>
+              <tr className={(editando === x.ini || apagando === x.ini) && reg ? "emb-ed" : undefined}>
+                <td>
+                  <b>{ord}</b>
+                </td>
+                <td>
+                  {fmt(x.ini) + " a " + fmt(e.ultimoBordo)}
+                  <div className="mute">
+                    {x.src + " · translado " + fmt(e.ida) + (e.volta > e.ultimoBordo ? " e " + fmt(e.volta) : "")}
+                  </div>
+                </td>
+                <td>
+                  {e.A}
+                  {x.dobra ? <div className="mute">{"dobra +" + x.dobra}</div> : null}
+                </td>
+                <td>{fmt(e.folgaFim)}</td>
+                <td>{unesc(nomeBarco(S, x.boat)) || <span className="mute">—</span>}</td>
+                <td>
+                  {s === "Previsto" ? (
+                    <Chip k="warn">Previsto</Chip>
+                  ) : s === "Translado" ? (
+                    <Chip k="warn">Translado</Chip>
+                  ) : s === "Embarcado" ? (
+                    <Chip k="sea">Embarcado</Chip>
+                  ) : s === "Folga" ? (
+                    <Chip k="ok">Folga</Chip>
+                  ) : (
+                    <span className="mute">Concluído</span>
+                  )}
+                </td>
+                {admin ? (
+                  <td className="emb-acoes">
+                    {reg ? (
+                      <>
+                        <button type="button" className="clip" title="Corrigir embarque" aria-label={"Corrigir o " + ord + " embarque"} onClick={() => abrir(x)}>
+                          <IcLapis />
+                        </button>
+                        <button
+                          type="button"
+                          className="clip emb-apagar"
+                          title={registrados < 2 ? "O colaborador precisa ter ao menos um embarque registrado" : "Apagar embarque"}
+                          aria-label={"Apagar o " + ord + " embarque"}
+                          disabled={registrados < 2}
+                          onClick={() => {
+                            fechar();
+                            setApagando(x.ini);
+                            mostrarEdicao();
+                          }}
+                        >
+                          <IcLixeira />
+                        </button>
+                      </>
+                    ) : null}
+                  </td>
+                ) : null}
+              </tr>
+              {admin && reg && apagando === x.ini ? (
+                <tr className="emb-ed">
+                  <td colSpan={cols}>
+                    <div className="emb-conf">
+                      <span>{"Apagar o " + ord + " embarque (" + fmt(x.ini) + ")? Os embarques previstos serão recalculados."}</span>
+                      <button type="button" className="ghost" onClick={() => setApagando(null)}>
+                        Cancelar
+                      </button>
+                      <button type="button" className="emb-perigo" onClick={() => apagar(x.ini)}>
+                        Apagar embarque
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : null}
+              {admin && reg && editando === x.ini && fc ? (
+                <tr className="emb-ed">
+                  <td colSpan={cols}>
+                    <h4 className="fh4">{"Corrigir o " + ord + " embarque"}</h4>
+                    <div className="emb-form">
+                      {campo("data", "Data de embarque", "date")}
+                      {campo("dias", "Dias a bordo", "number")}
+                      {campo("dobra", "Dobra (dias)", "number")}
+                      {campo("ida", "Translado de ida", "date")}
+                      {campo("volta", "Translado de volta", "date")}
+                      <div className="ff">
+                        <label htmlFor="cebarco">Barco</label>
+                        <div className="fin">
+                          <select id="cebarco" value={fc.barco} onChange={(e) => setFc({ ...fc, barco: e.target.value })}>
+                            <option value="">Sem barco definido</option>
+                            {(S.boats || []).map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {unesc(b.name)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mute emb-nota">A correção é gravada na hora e fica registrada (quem alterou, quando, antes e depois).</p>
+                    <div className="emb-conf">
+                      <p className="ferr" role="alert">
+                        {erroC}
+                      </p>
+                      <button type="button" className="ghost" onClick={fechar}>
+                        Cancelar
+                      </button>
+                      <button type="button" onClick={salvar}>
+                        Salvar correção
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : null}
+            </Fragment>
           );
         })}
       </tbody>
@@ -210,6 +407,14 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     if (corpo.current) corpo.current.scrollTop = 0;
   };
   const set = <K extends keyof FormColab>(k: K, v: FormColab[K]) => setF((x) => ({ ...x, [k]: v }));
+  /** Depois de corrigir ou apagar um embarque, os campos da escala passam a mostrar o embarque registrado mais recente. */
+  const recarregarEscala = () => {
+    const E = loja.obter();
+    const np = cedit ? pessoa(E, cedit) : undefined;
+    if (!np) return;
+    const g = formDe(E, np);
+    setF((x) => ({ ...x, data: g.data, dias: g.dias, ida: g.ida, volta: g.volta, barco: g.barco }));
+  };
   const conferido = (id: string) =>
     setLidos((s) => {
       if (!s.has(id)) return s;
@@ -732,7 +937,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
             </div>
             <h4 className="fh4">Embarques do colaborador</h4>
             <div className="scroll" id="fembs">
-              <EmbarquesFicha S={S} p={p} />
+              <EmbarquesFicha S={S} p={p} aoAlterar={recarregarEscala} />
             </div>
           </section>
 

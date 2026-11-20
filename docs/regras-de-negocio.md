@@ -75,6 +75,14 @@ A folga não gozada é compensada mais à frente, conforme o cronograma do proje
 | Folga compensatória | Compensando folga não gozada |
 | Aguardando | Folga terminou e o próximo embarque registrado começa depois do previsto |
 
+### Correção de embarques já registrados
+
+- Só o perfil **Admin RH** corrige (data de embarque, dias a bordo, dobra, translados e barco) ou apaga um embarque já registrado. O RH continua registrando embarques novos e ajustando o embarque atual (dobra, translado).
+- A correção não pode sobrepor outro embarque registrado do mesmo colaborador (do translado de ida ao de volta) e segue os mesmos limites do registro (translado de até 10 dias).
+- O colaborador mantém ao menos um embarque registrado (corrige-se em vez de apagar).
+- Se o embarque corrigido ou apagado for o mais recente, a escala do colaborador passa a seguir o registrado mais recente e os embarques previstos são recalculados.
+- O servidor descarta a correção vinda de quem não é Admin RH e registra na auditoria cada correção (quem, quando, antes e depois) e cada tentativa bloqueada.
+
 ## Validade de cursos e exames
 
 A data de validade é o último dia válido.

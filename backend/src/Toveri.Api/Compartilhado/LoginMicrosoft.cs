@@ -16,6 +16,8 @@ namespace Toveri.Api.Compartilhado;
 ///   Toveri__EntraClientId  = ID do aplicativo "TOVERI Gestão de Pessoas - Site" no Entra
 ///   Toveri__EntraTenantId  = locatário da TOVERI
 ///   Toveri__Acesso         = e-mails liberados
+///   Toveri__AdminRH        = e-mails do perfil Admin RH (os demais liberados são RH); só o Admin RH corrige ou
+///                            apaga embarques já registrados. Vazio = ninguém é Admin RH.
 /// Sem segredo: o Entra devolve só o id_token (form_post), validado pela assinatura.
 /// </summary>
 public static class LoginMicrosoft
@@ -90,12 +92,14 @@ public static class LoginMicrosoft
         return null;
     }
 
-    public static bool Liberado(IConfiguration cfg, string email)
-    {
-        var lista = (cfg["Toveri:Acesso"] ?? "")
-            .Split([';', ',', ' ', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return lista.Any(x => string.Equals(x, email, StringComparison.OrdinalIgnoreCase));
-    }
+    public static bool Liberado(IConfiguration cfg, string email) => NaLista(cfg["Toveri:Acesso"], email);
+
+    /// <summary>Perfil Admin RH: precisa estar liberado e na lista <c>Toveri:AdminRH</c>.</summary>
+    public static bool AdminRH(IConfiguration cfg, string email) => Liberado(cfg, email) && NaLista(cfg["Toveri:AdminRH"], email);
+
+    private static bool NaLista(string? valor, string email) =>
+        (valor ?? "").Split([';', ',', ' ', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, email, StringComparison.OrdinalIgnoreCase));
 
     public static void MapLoginMicrosoft(this WebApplication app)
     {

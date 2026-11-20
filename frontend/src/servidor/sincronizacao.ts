@@ -113,7 +113,8 @@ export class Sincronizador {
         const r = await this.t.enviarPatch(ops);
         this.falhas = 0;
         this.receber(r, enviado);
-        this.mostrar("");
+        if (r.bloqueado) this.mostrar("Só o Admin RH pode corrigir ou apagar embarques já registrados. A alteração foi desfeita.", true);
+        else this.mostrar("");
       } catch (e) {
         if (e instanceof SessaoExpirada) return;
         this.falhas++;

@@ -58,4 +58,4 @@ Enquanto as rotas de cada cadastro não usam o banco definitivo, as telas gravam
 
 Tudo fica num SQLite em `Toveri:Dados` (no Azure, `/home/dados`), com auditoria de alterações e de arquivos abertos.
 
-Login (`Compartilhado/LoginMicrosoft.cs`): tela `/entrar` com "Entrar com Microsoft" (Entra ID, só contas da TOVERI) e lista de e-mails liberados em `Toveri:Acesso`. Em desenvolvimento, sem `Toveri:EntraClientId`, entra como `Toveri:UsuarioDev`. Rode a API e, em outro terminal, `npm run dev` em `frontend/`.
+Login (`Compartilhado/LoginMicrosoft.cs`): tela `/entrar` com "Entrar com Microsoft" (Entra ID, só contas da TOVERI) e lista de e-mails liberados em `Toveri:Acesso`. Em desenvolvimento, sem `Toveri:EntraClientId`, entra como `Toveri:UsuarioDev` (com perfil Admin RH; `Toveri:UsuarioDevAdmin=false` testa o perfil RH). Perfil Admin RH em produção: `Toveri:AdminRH`. Rode a API e, em outro terminal, `npm run dev` em `frontend/`.

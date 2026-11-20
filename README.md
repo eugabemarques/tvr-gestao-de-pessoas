@@ -86,7 +86,7 @@ Detalhes em [docs/regras-de-negocio.md](docs/regras-de-negocio.md).
 
 ## Acesso
 
-Perfis **Admin RH** e **RH**, hoje com as mesmas permissões. Para liberar alguém, veja [infra/README.md](infra/README.md).
+Perfis **Admin RH** e **RH**. Os dois fazem tudo no dia a dia; **só o Admin RH corrige ou apaga embarques já registrados** (lápis e lixeira na aba Embarques da ficha). O servidor recusa essa correção vinda do perfil RH e registra cada correção na auditoria com o valor antigo e o novo. Os e-mails do Admin RH ficam em `Toveri__AdminRH`. Para liberar alguém, veja [infra/README.md](infra/README.md).
 
 ## Publicar
 

@@ -2,7 +2,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { loja } from "./loja";
+import { loja, perfil } from "./loja";
 import { AcessoNegado, obterEstado, obterUsuario, SessaoExpirada, URL_LOGOUT, type Usuario } from "./servidor/api";
 import "./estilos.css";
 
@@ -44,6 +44,7 @@ async function iniciar(): Promise<void> {
   let usuario: Usuario;
   try {
     usuario = await obterUsuario();
+    perfil.admin = !!usuario.admin;
   } catch (e) {
     if (e instanceof SessaoExpirada) return;
     if (e instanceof AcessoNegado) {

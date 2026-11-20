@@ -32,6 +32,8 @@ export interface Usuario {
 export interface RespostaEstado {
   versao: number;
   dados: Estado | null;
+  /** Alterações descartadas pelo servidor (correção de embarque antigo sem ser Admin RH). */
+  bloqueado?: number;
 }
 
 export async function api<T>(url: string, op: { method?: string; body?: unknown } = {}): Promise<T> {

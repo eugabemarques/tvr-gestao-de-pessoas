@@ -12,6 +12,7 @@
  * seguinte. Com o padrão, o ciclo 42x42 dura 1 + 42 + 42 = 85 dias.
  * Dados antigos, sem `ti`/`tv`, usam o padrão.
  */
+import { fmt } from "./datas";
 import type { Barco, Embarque, Estado, Pessoa } from "./tipos";
 
 /** Dias de translado de ida antes do embarque (padrão). */
@@ -172,6 +173,76 @@ export function registrarEmbarque(S: Estado, pid: number, embark: number, dias: 
   p.tv = tv;
   S.hist = (S.hist || []).filter((h) => !(h.pid === p.id && h.ini === p.embark)).concat([{ pid: p.id, ini: embark, dias, dobra: 0, boat, ti, tv }]);
   return p;
+}
+
+/** Dados de um embarque já registrado, como corrigidos pelo Admin RH. */
+export interface CorrecaoEmbarque {
+  ini: number;
+  dias: number;
+  dobra: number;
+  boat: number | null;
+  ti: number;
+  tv: number;
+}
+
+/** Período de trabalho (do translado de ida ao de volta) de um embarque. */
+const trabalho = (h: { ini: number; dias: number; dobra?: number; ti?: number; tv?: number }) => etapas(h.ini, h.dias + (h.dobra || 0), diasIda(h), diasVolta(h));
+
+/** Erro da correção de um embarque (null = ok): valores válidos e sem sobrepor outro embarque registrado do colaborador. */
+export function erroCorrecao(S: Estado, pid: number, iniAntigo: number, c: CorrecaoEmbarque): string | null {
+  if (!Number.isFinite(c.ini)) return "Informe a data de embarque.";
+  if (!Number.isInteger(c.dias) || c.dias < 1 || c.dias > 120) return "Dias a bordo: informe de 1 a 120.";
+  if (!Number.isInteger(c.dobra) || c.dobra < 0 || c.dobra > 60) return "Dobra: informe de 0 a 60 dias.";
+  const t = erroTranslado(c.ti, c.tv);
+  if (t) return t;
+  const e = trabalho(c);
+  for (const h of S.hist || []) {
+    if (h.pid !== pid || h.ini === iniAntigo) continue;
+    const o = trabalho(h);
+    if (e.ida <= o.volta && o.ida <= e.volta) return "Esse período se sobrepõe a outro embarque registrado (" + fmt(o.ini) + " a " + fmt(o.ultimoBordo) + ").";
+  }
+  return null;
+}
+
+/** Mantém os dados do colaborador iguais aos do embarque registrado mais recente (base dos próximos previstos). */
+function alinharAoMaisRecente(S: Estado, p: Pessoa): void {
+  const u = (S.hist || []).filter((h) => h.pid === p.id).sort((a, b) => b.ini - a.ini)[0];
+  if (!u) return;
+  p.embark = u.ini;
+  p.dias = u.dias;
+  p.dobra = u.dobra || 0;
+  if (u.boat !== undefined) p.boat = u.boat;
+  p.ti = diasIda(u);
+  p.tv = diasVolta(u);
+}
+
+/** Embarque registrado mais recente do colaborador (data de início) ou null. */
+const maisRecente = (S: Estado, pid: number): number | null => {
+  const l = (S.hist || []).filter((h) => h.pid === pid).map((h) => h.ini);
+  return l.length ? Math.max(...l) : null;
+};
+
+/** Corrige um embarque já registrado (só Admin RH; muda o estado recebido). */
+export function corrigirEmbarque(S: Estado, pid: number, iniAntigo: number, c: CorrecaoEmbarque): Pessoa | undefined {
+  const p = pessoa(S, pid);
+  if (!p) return undefined;
+  const eraUltimo = maisRecente(S, pid) === iniAntigo;
+  S.hist = (S.hist || [])
+    .filter((h) => !(h.pid === pid && h.ini === iniAntigo))
+    .concat([{ pid, ini: c.ini, dias: c.dias, dobra: c.dobra, boat: c.boat, ti: c.ti, tv: c.tv }]);
+  if (eraUltimo || maisRecente(S, pid) === c.ini) alinharAoMaisRecente(S, p);
+  return p;
+}
+
+/** Apaga um embarque registrado (só Admin RH). O colaborador precisa manter ao menos um; devolve false se não apagou. */
+export function apagarEmbarque(S: Estado, pid: number, ini: number): boolean {
+  const p = pessoa(S, pid);
+  const dele = (S.hist || []).filter((h) => h.pid === pid);
+  if (!p || dele.length < 2 || !dele.some((h) => h.ini === ini)) return false;
+  const eraUltimo = maisRecente(S, pid) === ini;
+  S.hist = S.hist.filter((h) => !(h.pid === pid && h.ini === ini));
+  if (eraUltimo) alinharAoMaisRecente(S, p);
+  return true;
 }
 
 /** Adiciona dias de dobra ao embarque atual (muda o estado recebido). */

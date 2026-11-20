@@ -311,3 +311,17 @@ header h1,.vt,.panel>h2,.panel h2[id],.boat h3{color:var(--brand)}
 .logo .lo-w{display:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .logo .lo-c{display:none}:root:not([data-theme="light"]) .logo .lo-w{display:block}}
 :root[data-theme="dark"] .logo .lo-c{display:none}:root[data-theme="dark"] .logo .lo-w{display:block}
+
+/* ---------- correção de embarques (só Admin RH) ---------- */
+.emb-acoes{white-space:nowrap;text-align:right;width:1%}
+.emb-acoes .clip{display:inline-grid;vertical-align:middle}
+.emb-acoes .clip:disabled{opacity:.35;cursor:not-allowed}
+.emb-acoes .emb-apagar:not(:disabled):hover{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+tr.emb-ed>td{background:color-mix(in srgb,var(--sea) 7%,transparent)}
+.emb-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 14px}
+.emb-nota{font-size:12px;margin:2px 0 8px}
+.emb-conf{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.emb-conf>span{flex:1;min-width:200px}
+.emb-conf .ferr{flex:1;margin:0}
+button.emb-perigo{background:var(--bad);color:#fff}
+@media(max-width:760px){.emb-form{grid-template-columns:1fr 1fr}}
