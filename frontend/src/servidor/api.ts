@@ -96,7 +96,8 @@ export function baixar(filename: string, data: Blob | string, aoFalhar?: () => v
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(u), 1000);
+    // libera a memória só depois: arquivos maiores (ex.: dossiê) ainda estão sendo gravados após 1 s
+    setTimeout(() => URL.revokeObjectURL(u), 60000);
   } catch {
     aoFalhar?.();
   }

@@ -14,8 +14,11 @@ export interface SecaoFichaPdf {
   linhas: [string, string][];
 }
 
-/** Conteúdo da ficha em PDF: os mesmos dados da pasta, mais cursos/ASO e vacinas. */
-export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: number): { nome: string; sub: string; secoes: SecaoFichaPdf[] } {
+/**
+ * Conteúdo da ficha em PDF: os mesmos dados da pasta, mais cursos/ASO e vacinas.
+ * `paginasAnexos` (no dossiê): página onde começa cada documento de `p.docs`, na mesma ordem.
+ */
+export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: number, paginasAnexos?: number[]): { nome: string; sub: string; secoes: SecaoFichaPdf[] } {
   const dados: [string, string][] = campos(S, p).map(([k, v]) => [k, unesc(v || "") || "—"]);
   const cursos: [string, string][] = S.courses
     .filter((c) => c.pid == p.id)
@@ -28,7 +31,7 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
   const obrig: [string, string][] = setor(p.setor)
     ? docsDo(p.setor).map((n) => [n, docFor(p.docs, n) ? "Anexado" : opcDoc(n) ? "Opcional" : "Pendente"])
     : [["", "Setor não definido."]];
-  const anexos: [string, string][] = (p.docs || []).map((d) => [d.campo || "Outros", d.name]);
+  const anexos: [string, string][] = (p.docs || []).map((d, i) => [d.campo || "Outros", d.name + (paginasAnexos ? "  ·  página " + paginasAnexos[i] : "")]);
   return {
     nome: unesc(p.name),
     sub: [nomeSetor(p.setor), unesc(p.role || "")].filter(Boolean).join(" · "),
@@ -37,7 +40,7 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
       { titulo: "Cursos e ASO", linhas: cursos.length ? cursos : [["", "Nenhum curso cadastrado."]] },
       { titulo: "Vacinas", linhas: vac },
       { titulo: "Documentos obrigatórios do setor", linhas: obrig },
-      { titulo: "Documentos anexados", linhas: anexos.length ? anexos : [["", "Nenhum documento anexado."]] },
+      { titulo: paginasAnexos ? "Documentos anexados (a seguir, neste dossiê)" : "Documentos anexados", linhas: anexos.length ? anexos : [["", "Nenhum documento anexado."]] },
     ],
   };
 }

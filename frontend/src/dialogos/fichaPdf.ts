@@ -28,10 +28,19 @@ async function logo(): Promise<{ url: string; w: number; h: number } | null> {
   }
 }
 
-export async function gerarFichaPdf(S: Estado, p: Pessoa, T: number): Promise<Blob> {
+export interface OpcoesFicha {
+  /** Dossiê: página onde começa cada anexo (mesma ordem de `p.docs`). */
+  paginasAnexos?: number[];
+  /** Dossiê: total de páginas, para o rodapé "Página x de y". */
+  totalPaginas?: number;
+  titulo?: string;
+}
+
+/** Ficha em PDF; devolve o arquivo e quantas páginas ele tem. */
+export async function gerarFichaPdf(S: Estado, p: Pessoa, T: number, o: OpcoesFicha = {}): Promise<{ bytes: ArrayBuffer; paginas: number }> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const F = fichaPdf(S, p, T);
+  const F = fichaPdf(S, p, T, o.paginasAnexos);
   const M = 16, // margem
     LARG = 210 - 2 * M,
     COL = 64, // largura da coluna dos rótulos
@@ -46,8 +55,8 @@ export async function gerarFichaPdf(S: Estado, p: Pessoa, T: number): Promise<Bl
     doc.addImage(lg.url, "PNG", M, y, w, h);
   }
   doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...CINZA);
-  doc.text("Ficha do colaborador", 210 - M, y + 4, { align: "right" });
-  doc.text("Gerada em " + fmt(T), 210 - M, y + 9, { align: "right" });
+  doc.text(o.titulo || "Ficha do colaborador", 210 - M, y + 4, { align: "right" });
+  doc.text((o.titulo ? "Gerado em " : "Gerada em ") + fmt(T), 210 - M, y + 9, { align: "right" }); // o dossiê / a ficha
   y += 20;
   doc.setFont("helvetica", "bold").setFontSize(17).setTextColor(...AZUL);
   doc.text(doc.splitTextToSize(F.nome || "Sem nome", LARG), M, y);
@@ -99,7 +108,7 @@ export async function gerarFichaPdf(S: Estado, p: Pessoa, T: number): Promise<Bl
     doc.setPage(i);
     doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...CINZA);
     doc.text("TOVERI - Gestão de Pessoas · Documento com dados pessoais (LGPD): não compartilhe fora da empresa.", M, 297 - 9);
-    doc.text("Página " + i + " de " + n, 210 - M, 297 - 9, { align: "right" });
+    doc.text("Página " + i + " de " + (o.totalPaginas || n), 210 - M, 297 - 9, { align: "right" });
   }
-  return doc.output("blob");
+  return { bytes: doc.output("arraybuffer"), paginas: n };
 }

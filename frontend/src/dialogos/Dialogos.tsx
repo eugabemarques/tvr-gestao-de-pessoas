@@ -432,6 +432,7 @@ export function CursoDialogo({ aberto, chave, tipo, aoFechar }: Fechar & { abert
 function CorpoPasta({ id, aoFechar }: Fechar & { id: number }) {
   const S = useEstado();
   const p = pessoa(S, id);
+  const [montando, setMontando] = useState(false);
   if (!p) {
     return (
       <>
@@ -448,13 +449,30 @@ function CorpoPasta({ id, aoFechar }: Fechar & { id: number }) {
   const docs = p.docs || [];
   const baixarDoc = (f: Documento) =>
     blobDoc(f).then((b) => (b ? baixar(f.name, b, () => toast("Não foi possível baixar o arquivo.")) : toast("Arquivo não encontrado neste navegador.")));
+  const falhaDown = () => toast("Não foi possível baixar o arquivo.");
   const baixarPdf = async () => {
     try {
       const { gerarFichaPdf } = await import("./fichaPdf");
-      baixar(nomeArquivoFicha(p.name).replace(/\.txt$/, ".pdf"), await gerarFichaPdf(S, p, T), () => toast("Não foi possível baixar o arquivo."));
+      const r = await gerarFichaPdf(S, p, T);
+      baixar(nomeArquivoFicha(p.name).replace(/\.txt$/, ".pdf"), new Blob([r.bytes], { type: "application/pdf" }), falhaDown);
     } catch (e) {
       console.warn("Ficha em PDF", e);
       toast("Não foi possível gerar o PDF. Tente de novo.");
+    }
+  };
+  const baixarDossie = async () => {
+    setMontando(true);
+    toast("Montando o dossiê com " + docs.length + (docs.length === 1 ? " documento" : " documentos") + "…");
+    try {
+      const { gerarDossie } = await import("./dossiePdf");
+      const r = await gerarDossie(S, p, T);
+      baixar(nomeArquivoFicha(p.name).replace(/^ficha_/, "dossie_").replace(/\.txt$/, ".pdf"), r.blob, falhaDown);
+      toast(r.falhas.length ? "Dossiê baixado, mas não foi possível incluir: " + r.falhas.join(", ") + ". Baixe esses arquivos pela pasta." : "Dossiê baixado.");
+    } catch (e) {
+      console.warn("Dossiê", e);
+      toast("Não foi possível montar o dossiê. Tente de novo.");
+    } finally {
+      setMontando(false);
     }
   };
   return (
@@ -499,11 +517,14 @@ function CorpoPasta({ id, aoFechar }: Fechar & { id: number }) {
         )}
       </div>
       <div className="row" style={{ marginTop: 14 }}>
-        <button type="button" id="pfichapdf" onClick={() => void baixarPdf()}>
-          Baixar ficha (PDF)
+        <button type="button" id="pdossie" disabled={montando} title="Ficha seguida de todos os documentos anexados, num único PDF" onClick={() => void baixarDossie()}>
+          {montando ? "Montando o dossiê…" : "Baixar dossiê (PDF)"}
         </button>
-        <button type="button" className="ghost" id="pficha" onClick={() => baixar(nomeArquivoFicha(p.name), fichaTexto(S, p), () => toast("Não foi possível baixar o arquivo."))}>
-          Baixar ficha (.txt)
+        <button type="button" className="ghost" id="pfichapdf" title="Só a ficha, sem os documentos" onClick={() => void baixarPdf()}>
+          Só a ficha (PDF)
+        </button>
+        <button type="button" className="ghost" id="pficha" onClick={() => baixar(nomeArquivoFicha(p.name), fichaTexto(S, p), falhaDown)}>
+          Ficha (.txt)
         </button>
         <button className="ghost" type="button" id="pfechar" onClick={aoFechar}>
           Fechar

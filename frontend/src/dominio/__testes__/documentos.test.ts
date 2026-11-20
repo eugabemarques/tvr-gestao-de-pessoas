@@ -96,6 +96,14 @@ describe("ficha e textos", () => {
     expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["Certificado PAM", "Opcional"]);
     expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["Work Citation", "Pendente"]);
     expect(sec["Documentos anexados"]).toEqual([["CBSP", "cbsp.pdf"]]);
+    // no dossiê, cada anexo mostra a página onde começa
+    const D = fichaPdf(S, { ...p, docs: [{ campo: "CBSP", name: "cbsp.pdf" }, { name: "outro.png" }] }, T, [3, 5]);
+    const ult = D.secoes.at(-1)!;
+    expect(ult.titulo).toBe("Documentos anexados (a seguir, neste dossiê)");
+    expect(ult.linhas).toEqual([
+      ["CBSP", "cbsp.pdf  ·  página 3"],
+      ["Outros", "outro.png  ·  página 5"],
+    ]);
   });
   it("Ficha.txt sem escape HTML e com travessão nos vazios", () => {
     const t = fichaTexto({ boats: [] }, p);
