@@ -5,6 +5,7 @@ import { Toast } from "./componentes/Comuns";
 import { IcBarco, IcChat, IcColab, IcCursos, IcEmbarques, IcLista, IcPainel, IcSeta, IcSino } from "./componentes/Icones";
 import { Avisos, BarcoDialogo, Conta, CursoDialogo, Dobra, Info, Pasta } from "./dialogos/Dialogos";
 import { Ficha } from "./dialogos/Ficha";
+import { cadastrosIncompletos } from "./dominio/cadastros";
 import { textoHoje } from "./dominio/datas";
 import { iniciais } from "./dominio/texto";
 import { avisos } from "./dominio/validade";
@@ -74,6 +75,7 @@ export function App({ usuario }: { usuario: Usuario }) {
   );
 
   const pend = avisos(S, T).filter((a) => !a.res);
+  const nAvisos = pend.length + cadastrosIncompletos(S).length;
   const subVisivel = tela === "escala" || tela === "equipe";
   const aba = (k: Tela, icone: ReactNode, rotulo: string, sub?: boolean) => (
     <button type="button" data-tab={k} className={sub ? "sub" : undefined} hidden={sub ? !subVisivel : undefined} aria-current={tela === k ? "page" : undefined} onClick={() => setTela(k)}>
@@ -150,10 +152,10 @@ export function App({ usuario }: { usuario: Usuario }) {
             >
               <IcChat />
             </button>
-            <button className="bell" id="sino" type="button" aria-label={"Avisos do sistema (" + pend.length + ")"} onClick={() => setAvisosAb(true)}>
+            <button className="bell" id="sino" type="button" aria-label={"Avisos do sistema (" + nAvisos + ")"} onClick={() => setAvisosAb(true)}>
               <IcSino />
-              <span className="badge" id="nbadge" hidden={!pend.length} style={{ background: pend.some((a) => a.bad) ? "var(--bad)" : "var(--warn)" }}>
-                {pend.length}
+              <span className="badge" id="nbadge" hidden={!nAvisos} style={{ background: pend.some((a) => a.bad) ? "var(--bad)" : "var(--warn)" }}>
+                {nAvisos}
               </span>
             </button>
             <button className="bell avatar" id="perfil" type="button" aria-label={"Perfil do usuário: " + usuario.nome} onClick={() => setContaAb(true)}>

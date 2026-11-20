@@ -54,19 +54,21 @@ export function docFor(docs: Documento[] | undefined, n: string): Documento | nu
   return VACS.every((a) => (docs || []).some((x) => x.campo === "Vacina: " + a[1])) ? { name: "3 comprovantes na seção Vacinas", virt: true } : null;
 }
 
-export const opcDoc = (n: string): boolean => /se tiver/i.test(n) || n === "Nº do PIS";
+/** Documentos que não são cobrados: passaporte, PIS e o Certificado PAM (um diferencial, não obrigação). */
+export const opcDoc = (n: string): boolean => /se tiver/i.test(n) || n === "Nº do PIS" || n === "Certificado PAM";
 
 export function pendDocs(p: Pick<Pessoa, "setor" | "docs">): string[] {
   return docsDo(p.setor).filter((n) => !opcDoc(n) && !docFor(p.docs, n));
 }
 
 export const CURSO_DOCS = ["CBSP", "THUET / BOSIET / FOET", "Norueguês / OEUK / ENG1", "Certificado PAM"];
-export const reqCursos = (st: string): string[] => docsDo(st).filter((n) => CURSO_DOCS.includes(n));
+export const reqCursos = (st: string): string[] => docsDo(st).filter((n) => CURSO_DOCS.includes(n) && !opcDoc(n));
 
 /** Cursos da lista de escolha: [valor, rótulo]. */
 export const CURSOS: [string, string][] = [
   ["CBSP", "CBSP"],
   ["THUET / BOSIET / FOET", "THUET / BOSIET / FOET"],
+  ["Certificado PAM", "Certificado PAM"],
   ["MMO - Observação de Mamíferos Marinhos", "MMO - Observação de Mamíferos Marinhos"],
   ["MAP - Monitoramento Acústico Passivo", "MAP - Monitoramento Acústico Passivo"],
 ];

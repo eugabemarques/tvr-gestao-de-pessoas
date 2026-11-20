@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   avisoRemoverBarco,
+  cadastrosIncompletos,
   cursosPreenchidos,
   formDe,
   pendenciasColab,
@@ -46,6 +47,16 @@ describe("validação da ficha", () => {
     expect(pendenciasColab(f)).toEqual(["RG", "CPF", "nome da mãe", "e-mail", "celular", "contato de emergência", "rua", "número do endereço", "CEP", "escala de embarque"]);
   });
   it("ficha completa não tem pendências", () => expect(pendenciasColab(valido())).toEqual([]));
+  it("cadastros incompletos aparecem nos avisos e somem quando completos", () => {
+    const S: Estado = estadoVazio();
+    const inc = salvarColab(S, null, { ...formDe(S, null), nome: "Bruno" }, [], [], T);
+    salvarColab(S, null, valido(), [], [], T);
+    const r = cadastrosIncompletos(S);
+    expect(r.map((x) => x.pessoa.id)).toEqual([inc.id]);
+    expect(r[0].falta).toContain("CPF");
+    salvarColab(S, inc.id, valido({ nome: "Bruno" }), [], [], T);
+    expect(cadastrosIncompletos(S)).toEqual([]);
+  });
   it("ignora linhas de curso em branco", () => {
     const linhas = [{ name: "", valid: null }, { name: "CBSP", valid: T }];
     expect(cursosPreenchidos(linhas)).toEqual([{ name: "CBSP", valid: T }]);

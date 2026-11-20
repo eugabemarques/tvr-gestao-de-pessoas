@@ -1,7 +1,8 @@
 /** Diálogos menores: informação, avisos, conta, dobra, barco, curso/ASO e pasta do colaborador. */
 import { useState } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
-import { avisoRemoverBarco, marcarResolvido, removerBarco, removerCurso, salvarBarco, salvarCurso, tripulantesDoBarco, validarBarco, validarCurso } from "../dominio/cadastros";
+import { useAcoes } from "../acoes";
+import { avisoRemoverBarco, cadastrosIncompletos, marcarResolvido, removerBarco, removerCurso, salvarBarco, salvarCurso, tripulantesDoBarco, validarBarco, validarCurso } from "../dominio/cadastros";
 import { diaIso, fmt, toDay } from "../dominio/datas";
 import { ACEITOS, campos, CURSOS, docFor, docsDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
 import { adicionarDobra, barco, cycle, pessoa, previaDobra } from "../dominio/escala";
@@ -27,10 +28,11 @@ export function Info({ aberto, titulo, texto, aoFechar }: Fechar & { aberto: boo
   );
 }
 
-/** Lista de avisos do sino (pendentes e resolvidos). */
-export function ListaAvisos() {
+/** Lista de avisos do sino (pendentes e resolvidos) e cadastros incompletos. */
+export function ListaAvisos({ aoAbrirFicha }: { aoAbrirFicha?: (id: number) => void }) {
   const S = useEstado();
   const al = avisos(S, T);
+  const inc = cadastrosIncompletos(S);
   const pend = al.filter((a) => !a.res),
     done = al.filter((a) => a.res);
   const texto = (a: (typeof al)[number]) => (
@@ -42,6 +44,25 @@ export function ListaAvisos() {
   const marcar = (key: string, r: boolean) => loja.mutar((E) => marcarResolvido(E, key, r));
   return (
     <div id="alertas">
+      {inc.length ? (
+        <>
+          <h4 className="fh4">{"Cadastros incompletos (" + inc.length + ")"}</h4>
+          {inc.map((x) => (
+            <div className="alert w" key={"inc|" + x.pessoa.id}>
+              <div style={{ flex: 1 }}>
+                <b>{unesc(x.pessoa.name)}</b>
+                {": falta " + x.falta.join(", ") + "."}
+              </div>
+              {aoAbrirFicha ? (
+                <button className="ghost" onClick={() => aoAbrirFicha(x.pessoa.id)}>
+                  Abrir ficha
+                </button>
+              ) : null}
+            </div>
+          ))}
+          <h4 className="fh4">Cursos e ASO</h4>
+        </>
+      ) : null}
       {pend.length ? (
         pend.map((a) => (
           <div className={"alert" + (a.bad ? "" : " w")} key={a.key}>
@@ -72,11 +93,17 @@ export function ListaAvisos() {
 }
 
 export function Avisos({ aberto, aoFechar }: Fechar & { aberto: boolean }) {
+  const { abrirColab } = useAcoes();
   return (
     <Dialogo aberto={aberto} aoFechar={aoFechar} rotulo="t-al">
       <h2 id="t-al">Avisos do sistema</h2>
-      <p className="mute">Cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias.</p>
-      <ListaAvisos />
+      <p className="mute">Cadastros com informações faltando e cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias.</p>
+      <ListaAvisos
+        aoAbrirFicha={(id) => {
+          aoFechar();
+          abrirColab(id);
+        }}
+      />
       <div className="row">
         <button className="ghost" id="afechar" type="button" onClick={aoFechar}>
           Fechar

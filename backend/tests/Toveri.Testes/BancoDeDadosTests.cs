@@ -36,7 +36,7 @@ public sealed class BancoDeDadosTests : IDisposable
 
         var ambiental = db.Setores.Single(s => s.Nome == "Ambiental");
         Assert.Equal(regra.Id, ambiental.RegraEscalaId);
-        Assert.Equal(4, db.RequisitosCurso.Count(r => r.SetorId == ambiental.Id));
+        Assert.Equal(3, db.RequisitosCurso.Count(r => r.SetorId == ambiental.Id)); // Certificado PAM é opcional
         var aso = db.RequisitosCurso.Single(r => r.SetorId == null);
         Assert.Equal("ASO", db.TiposCurso.Single(t => t.Id == aso.TipoCursoId).Nome);
         Assert.True(aso.SomenteAposAdmissao);

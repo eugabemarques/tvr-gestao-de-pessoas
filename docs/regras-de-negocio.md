@@ -75,7 +75,7 @@ Aparecem para quem está embarcado, ou tem embarque começando em até 30 dias (
 Cadastros por setor, carregados com as regras do protótipo:
 
 - **Todos os setores:** RG/CPF/CNH, certidão de nascimento ou casamento, título de eleitor, CTPS, comprovante de residência, comprovante de escolaridade e as três vacinas (Covid-19, DT e febre amarela). Passaporte e PIS entram só se o colaborador tiver.
-- **Ambiental:** também CTF Ibama e Work Citation, e os cursos CBSP, THUET/BOSIET/FOET, Norueguês/OEUK/ENG1 e Certificado PAM.
+- **Ambiental:** também CTF Ibama e Work Citation, e os cursos CBSP, THUET/BOSIET/FOET e Norueguês/OEUK/ENG1. O **Certificado PAM** é opcional (um diferencial): pode ser cadastrado e anexado, mas não fica pendente.
 - **ASO:** obrigatório para todos os setores, mas **só depois da admissão**. Quem está em standby não aparece com o ASO pendente.
 
 Qualquer documento ou curso pode ser marcado como "somente após admissão" no cadastro de requisitos.
@@ -88,7 +88,7 @@ O colaborador sem data de admissão está em **standby**: cadastrado, mas ainda 
 
 ## Cadastro de colaboradores
 
-- A ficha pode ser salva incompleta: só o **nome** é obrigatório. Os campos em branco não impedem salvar; ao salvar, o sistema avisa o que ficou faltando (RG, CPF, contato, endereço, setor e, no setor Ambiental, a escala). Um campo preenchido de forma errada (CPF, PIS, e-mail, celular ou CEP com formato inválido) ainda impede salvar.
+- A ficha pode ser salva incompleta: só o **nome** é obrigatório. Os campos em branco não impedem salvar; ao salvar, o sistema avisa o que ficou faltando (RG, CPF, contato, endereço, setor e, no setor Ambiental, a escala). Enquanto faltar algo, o colaborador aparece em **Cadastros incompletos** no sino de avisos, com o botão "Abrir ficha"; o aviso some sozinho quando o cadastro é completado. Um campo preenchido de forma errada (CPF, PIS, e-mail, celular ou CEP com formato inválido) ainda impede salvar.
 - No setor Ambiental sem escala informada, o colaborador é salvo sem embarque previsto.
 - O CPF é validado pelos dígitos verificadores e não pode se repetir.
 - Colaboradores não são apagados: o desligamento é registrado por data e o histórico é mantido. O banco recusa apagar qualquer registro que tenha histórico ligado a ele.

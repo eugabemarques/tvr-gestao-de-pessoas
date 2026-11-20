@@ -32,7 +32,9 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 **Painel**
 - Resumo: embarcados hoje, de folga hoje, cursos vencidos e cursos que vencem em até 90 dias.
 - Gráfico de cursos por situação (vencidos, vencem em até 90 dias, em dia). Clicar numa coluna expande a lista de cursos daquela situação.
-- Ícone de sino com os avisos: cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias. Cada aviso pode ser marcado como **Resolvido** (e reaberto depois).
+- Ícone de sino com os avisos:
+  - **Cadastros incompletos**: colaboradores com informações faltando, com o que falta e o botão "Abrir ficha". Some sozinho quando o cadastro é completado.
+  - Cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias. Cada aviso pode ser marcado como **Resolvido** (e reaberto depois).
 
 **Embarques**
 - Registro de embarque: escolhe-se o colaborador, a data de embarque e os dias embarcados, e o sistema calcula a folga conquistada, o último dia a bordo e o próximo embarque.
@@ -50,9 +52,9 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 
 **Colaboradores**
 - Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
-- Ficha dividida em seções: Dados pessoais, Cursos, Embarques e Vacinas.
+- Ficha dividida em seções: Dados pessoais, Cursos, Embarques e Vacinas. Pode ser salva incompleta (só o nome é obrigatório).
 - Clipe de anexo ao lado de cada campo. Os documentos obrigatórios do setor ficam marcados nos próprios campos, com contador de pendências em cada seção.
-- Para o setor **Ambiental**, a escala (barco, data de embarque e dias) é obrigatória e os cursos obrigatórios do setor aparecem automaticamente.
+- Para o setor **Ambiental**, a escala (barco, data de embarque e dias) e os cursos CBSP, THUET/BOSIET/FOET e Norueguês/OEUK/ENG1 aparecem como pendências. O Certificado PAM é opcional.
 
 **SharePoint**
 - A ficha (`Cadastro.txt`) e os anexos de cada colaborador são copiados para `RH - Administrativo/API - Gestão de Pessoas/<Nome>`.

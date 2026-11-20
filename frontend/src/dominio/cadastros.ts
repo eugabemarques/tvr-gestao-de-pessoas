@@ -111,25 +111,44 @@ export function validarColab(f: FormColab): ErroForm | null {
   return bad ? { campo: bad[0], msg: bad[2] } : null;
 }
 
+type DadosPendencia = Partial<Record<"rg" | "cpf" | "mae" | "email" | "cel" | "setor" | "emerg" | "rua" | "num" | "cep", string>> & { escalaOk: boolean };
+
+function faltando(x: DadosPendencia): string[] {
+  const tem = (s: string | undefined) => !!(s || "").trim();
+  const itens: [boolean, string][] = [
+    [tem(x.rg), "RG"],
+    [tem(x.cpf), "CPF"],
+    [tem(x.mae), "nome da mãe"],
+    [tem(x.email), "e-mail"],
+    [tem(x.cel), "celular"],
+    [tem(x.setor), "setor"],
+    [tem(x.emerg), "contato de emergência"],
+    [tem(x.rua), "rua"],
+    [tem(x.num), "número do endereço"],
+    [tem(x.cep), "CEP"],
+    [x.escalaOk, "escala de embarque"],
+  ];
+  return itens.filter((i) => !i[0]).map((i) => i[1]);
+}
+
 /** Informações que ficaram faltando na ficha (não impedem salvar; servem para avisar o RH). */
 export function pendenciasColab(f: FormColab): string[] {
-  const v = (x: string) => x.trim();
-  const amb = !!setor(v(f.setor))?.escala,
+  const amb = !!setor(f.setor.trim())?.escala,
     n = parseInt(f.dias) || 0;
-  const itens: [boolean, string][] = [
-    [!!v(f.rg), "RG"],
-    [!!v(f.cpf), "CPF"],
-    [!!v(f.mae), "nome da mãe"],
-    [!!v(f.email), "e-mail"],
-    [!!v(f.cel), "celular"],
-    [!!v(f.setor), "setor"],
-    [!!v(f.emerg), "contato de emergência"],
-    [!!v(f.rua), "rua"],
-    [!!v(f.num), "número do endereço"],
-    [!!v(f.cep), "CEP"],
-    [!amb || (!!f.data && n >= 1), "escala de embarque"],
-  ];
-  return itens.filter((x) => !x[0]).map((x) => x[1]);
+  return faltando({ ...f, escalaOk: !amb || (!!f.data && n >= 1) });
+}
+
+/** O que falta no cadastro gravado de um colaborador. */
+export function pendenciasPessoa(p: Pessoa): string[] {
+  return faltando({ ...p, escalaOk: !setor(p.setor)?.escala || p.embark != null });
+}
+
+/** Colaboradores com cadastro incompleto (avisos do sino), em ordem alfabética. */
+export function cadastrosIncompletos(S: Estado): { pessoa: Pessoa; falta: string[] }[] {
+  return S.people
+    .map((p) => ({ pessoa: p, falta: pendenciasPessoa(p) }))
+    .filter((x) => x.falta.length > 0)
+    .sort((a, b) => unesc(a.pessoa.name).localeCompare(unesc(b.pessoa.name), "pt-BR"));
 }
 
 /** Tira da ficha as linhas de curso em branco (sem curso escolhido). */

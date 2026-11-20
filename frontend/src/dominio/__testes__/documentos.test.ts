@@ -12,7 +12,7 @@ describe("documentos obrigatórios por setor", () => {
     expect(docsDo("administrativo").length).toBe(9);
     expect(docsDo("ambiental").length).toBe(15);
     expect(docsDo("")).toEqual([]);
-    expect(reqCursos("ambiental")).toEqual(["CBSP", "THUET / BOSIET / FOET", "Norueguês / OEUK / ENG1", "Certificado PAM"]);
+    expect(reqCursos("ambiental")).toEqual(["CBSP", "THUET / BOSIET / FOET", "Norueguês / OEUK / ENG1"]);
     expect(reqCursos("manutencao")).toEqual([]);
   });
   it("passaporte e PIS são opcionais", () => {
@@ -21,14 +21,19 @@ describe("documentos obrigatórios por setor", () => {
     expect(pendDocs(p)).not.toContain("Passaporte (se tiver)");
     expect(pendDocs(p).length).toBe(7);
   });
+  it("Certificado PAM é opcional no setor ambiental", () => {
+    expect(pendDocs({ setor: "ambiental", docs: [] })).not.toContain("Certificado PAM");
+    expect(campoObrigatorio(reqInfo("ambiental", []).list, "Certificado PAM")).toBe(false);
+    expect(curCampo("Certificado PAM")).toBe("Certificado PAM");
+  });
   it("vacinação completa com os três comprovantes", () => {
     expect(docFor(vacinas.slice(0, 2), VACDOC)).toBeNull();
     expect(docFor(vacinas, VACDOC)).toEqual({ name: "3 comprovantes na seção Vacinas", virt: true });
     expect(pendDocs({ setor: "administrativo", docs: vacinas })).not.toContain(VACDOC);
   });
   it("conta pendências por seção da ficha", () => {
-    expect(reqInfo("ambiental", []).sec).toEqual({ dados: 8, cursos: 4, vacinas: 1 });
-    expect(reqInfo("ambiental", [...vacinas, { campo: "CBSP", name: "c.pdf" }]).sec).toEqual({ dados: 8, cursos: 3, vacinas: 0 });
+    expect(reqInfo("ambiental", []).sec).toEqual({ dados: 8, cursos: 3, vacinas: 1 });
+    expect(reqInfo("ambiental", [...vacinas, { campo: "CBSP", name: "c.pdf" }]).sec).toEqual({ dados: 8, cursos: 2, vacinas: 0 });
     expect(reqInfo("", []).list).toEqual([]);
   });
   it("campos obrigatórios (vacinas contam pelo comprovante)", () => {
@@ -51,17 +56,16 @@ describe("cursos obrigatórios na ficha", () => {
       ["CBSP", true],
       ["THUET / BOSIET / FOET", true],
       ["Norueguês / OEUK / ENG1", true],
-      ["Certificado PAM", true],
       ["ASO", false],
     ]);
   });
   it("ao trocar de setor, descarta obrigatórios vazios e mantém os preenchidos", () => {
     const amb = syncReqCur([], "ambiental", []);
     amb[0].valid = T;
-    const adm = syncReqCur(amb, "administrativo", [{ campo: "Certificado PAM", name: "pam.pdf" }]);
+    const adm = syncReqCur(amb, "administrativo", [{ campo: "THUET / BOSIET / FOET", name: "thuet.pdf" }]);
     expect(adm.map((x) => [x.name, !!x.req])).toEqual([
       ["CBSP", false],
-      ["Certificado PAM", false],
+      ["THUET / BOSIET / FOET", false],
     ]);
   });
 });
