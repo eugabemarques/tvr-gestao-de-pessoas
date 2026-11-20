@@ -4,6 +4,7 @@ import { Chip, Dialogo } from "../componentes/Comuns";
 import { IcAncora, IcClipe, IcDados, IcFechar, IcLivro, IcOk, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
 import { fmt, toDay } from "../dominio/datas";
+import { extrairDoDocumento, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
 import {
   ACEITOS,
   campoObrigatorio,
@@ -33,6 +34,8 @@ const DA_SECAO_EMBARQUES = new Set(["cdata", "cdias", "cfi", "cff"]);
 interface Ctx {
   docs: Documento[];
   req: string[];
+  /** ids dos campos preenchidos pela leitura do documento (ainda não conferidos). */
+  lidos: Set<string>;
   anexar: (campo: string) => void;
   removerDoc: (campo: string) => void;
 }
@@ -87,6 +90,7 @@ function Campo(props: { ctx: Ctx; id?: string; rotulo: string; w2?: boolean; ane
       <label htmlFor={id}>
         {rotulo}
         {anexo && !semDoc ? <RTag ctx={ctx} anexo={anexo} /> : null}
+        {id && ctx.lidos.has(id) ? <span className="rtag lido">Lido do documento, confira</span> : null}
       </label>
       <div className="fin">
         {children}
@@ -175,6 +179,10 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
   const [sec, setSec] = useState<Secao>("dados");
   const [erro, setErro] = useState("");
   const [confirmar, setConfirmar] = useState(false);
+  const [lidos, setLidos] = useState<Set<string>>(() => new Set());
+  // valores atuais para a leitura do documento, que termina depois de alguns segundos
+  const atual = useRef({ f, ccur });
+  atual.current = { f, ccur };
   const anx = useRef<string | null>(null);
   const inputAnexo = useRef<HTMLInputElement>(null);
   const corpo = useRef<HTMLDivElement>(null);
@@ -189,14 +197,25 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     if (corpo.current) corpo.current.scrollTop = 0;
   };
   const set = <K extends keyof FormColab>(k: K, v: FormColab[K]) => setF((x) => ({ ...x, [k]: v }));
+  const conferido = (id: string) =>
+    setLidos((s) => {
+      if (!s.has(id)) return s;
+      const n = new Set(s);
+      n.delete(id);
+      return n;
+    });
   const txt = (k: keyof Omit<FormColab, "vac">) => ({
     value: f[k] as string,
-    onChange: (e: { target: { value: string } }) => set(k, e.target.value),
+    onChange: (e: { target: { value: string } }) => {
+      set(k, e.target.value);
+      conferido("c" + k);
+    },
   });
 
   const ctx: Ctx = {
     docs,
     req: I.list,
+    lidos,
     anexar: (campo) => {
       anx.current = campo;
       inputAnexo.current?.click();
@@ -215,6 +234,53 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
       return;
     }
     setDocs((d) => d.filter((x) => x.campo !== campo).concat([{ campo, ...doc }]));
+    if (tipoLeitura(campo)) void lerDocumento(campo, fl);
+  };
+
+  /** Lê o documento anexado e preenche os campos que estão vazios (nunca troca o que já foi digitado). */
+  const lerDocumento = async (campo: string, fl: File) => {
+    toast("Lendo o documento… A primeira leitura pode levar alguns segundos.");
+    let r: Leitura;
+    try {
+      const { lerTexto } = await import("../servidor/ocr");
+      r = extrairDoDocumento(campo, await lerTexto(fl));
+    } catch (e) {
+      console.warn("Leitura do documento", e);
+      toast("Não foi possível ler o documento automaticamente. Preencha os campos à mão.");
+      return;
+    }
+    const { f: fa, ccur: ca } = atual.current;
+    const so = (s: string) => s.replace(/[^\dA-Za-z]/g, "").toUpperCase();
+    const preenchidos: string[] = [];
+    const avisos = [...r.avisos];
+    const novos: Partial<FormColab> = {};
+    for (const [k, v] of Object.entries(r.valores) as [CampoLido, string][]) {
+      const atualV = (fa[k] || "").trim();
+      if (!atualV) {
+        novos[k] = v;
+        preenchidos.push(k);
+      } else if (so(atualV) !== so(v)) avisos.push("O " + ROTULO_LIDO[k] + " do documento (" + v + ") é diferente do digitado. Confira.");
+    }
+    if (preenchidos.length) setF((x) => ({ ...x, ...novos }));
+    if (r.validade) {
+      const i = ca.findIndex((x) => x.name && curCampo(x.name) === campo);
+      const dia = toDay(r.validade);
+      if (i >= 0 && ca[i].valid == null) {
+        setCcur((c) => c.map((x, j) => (j === i ? { ...x, valid: dia } : x)));
+        preenchidos.push("validade");
+      } else if (i >= 0 && ca[i].valid !== dia) avisos.push("A validade do documento (" + fmt(dia) + ") é diferente da informada. Confira.");
+    }
+    setLidos((s) => {
+      const n = new Set(s);
+      preenchidos.forEach((k) => n.add(k === "validade" ? "curso:" + campo : "c" + k));
+      return n;
+    });
+    const msg = preenchidos.length
+      ? "Lido do documento: " + preenchidos.map((k) => ROTULO_LIDO[k as CampoLido | "validade"]).join(", ") + ". Confira antes de salvar."
+      : avisos.length
+        ? ""
+        : "Não encontrei no documento nenhum número para preencher. Preencha à mão.";
+    toast([msg, ...avisos].filter(Boolean).join(" "));
   };
 
   const aoOutros = async (fs: File[]) => {
@@ -511,9 +577,20 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                         </div>
                       </div>
                       <div className="ff">
-                        <label htmlFor={"fcv" + i}>Validade</label>
+                        <label htmlFor={"fcv" + i}>
+                          Validade
+                          {cp && lidos.has("curso:" + cp) ? <span className="rtag lido">Lido do documento, confira</span> : null}
+                        </label>
                         <div className="fin">
-                          <input type="date" id={"fcv" + i} value={r.valid == null ? "" : new Date(r.valid * 864e5).toISOString().slice(0, 10)} onChange={(e) => validadeCurso(i, e.target.value)} />
+                          <input
+                            type="date"
+                            id={"fcv" + i}
+                            value={r.valid == null ? "" : new Date(r.valid * 864e5).toISOString().slice(0, 10)}
+                            onChange={(e) => {
+                              validadeCurso(i, e.target.value);
+                              if (cp) conferido("curso:" + cp);
+                            }}
+                          />
                         </div>
                       </div>
                       <div className="cst">{s ? <Chip k={s.k}>{s.t}</Chip> : r.req ? <Chip k="warn">Pendente</Chip> : <span className="mute">Sem validade</span>}</div>

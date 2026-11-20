@@ -90,5 +90,24 @@ O colaborador sem data de admissão está em **standby**: cadastrado, mas ainda 
 
 - A ficha pode ser salva incompleta: só o **nome** é obrigatório. Os campos em branco não impedem salvar; ao salvar, o sistema avisa o que ficou faltando (RG, CPF, contato, endereço, setor e, no setor Ambiental, a escala). Enquanto faltar algo, o colaborador aparece em **Cadastros incompletos** no sino de avisos, com o botão "Abrir ficha"; o aviso some sozinho quando o cadastro é completado. Um campo preenchido de forma errada (CPF, PIS, e-mail, celular ou CEP com formato inválido) ainda impede salvar.
 - No setor Ambiental sem escala informada, o colaborador é salvo sem embarque previsto.
+
+## Leitura de documentos anexados
+
+Ao anexar um documento pelo clipe, o sistema reconhece o texto do arquivo no próprio navegador (Tesseract e pdf.js; nenhum dado sai do computador e não há custo) e preenche **somente os campos vazios**:
+
+| Documento | Campos |
+|---|---|
+| RG / CPF / CNH | CPF e RG |
+| Nº do PIS | PIS |
+| Título de eleitor | número do título |
+| Passaporte | número do passaporte |
+| Comprovante de residência | CEP |
+| Certificado de curso / ASO | validade (só a data logo após "validade", "válido até", "vencimento", "expiry"...) |
+
+- CPF, PIS e título só são preenchidos se os dígitos verificadores baterem. O RG não tem dígito verificador: é o campo com mais chance de vir com um dígito errado e precisa ser conferido.
+- Se o documento tiver mais de um valor possível (ex.: conta de luz com o CEP da empresa e o do cliente), nada é preenchido e o aviso mostra os valores encontrados.
+- Se o campo já tiver um valor diferente do documento, ele não é trocado; o aviso pede para conferir.
+- Cada campo preenchido fica marcado "Lido do documento, confira" até ser editado. Nada é salvo sem o RH clicar em Salvar.
+- Nomes (mãe, pai) e endereço não são lidos: são textos livres que só uma IA conseguiria separar com segurança.
 - O CPF é validado pelos dígitos verificadores e não pode se repetir.
 - Colaboradores não são apagados: o desligamento é registrado por data e o histórico é mantido. O banco recusa apagar qualquer registro que tenha histórico ligado a ele.

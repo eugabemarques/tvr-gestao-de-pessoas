@@ -272,6 +272,8 @@ header h1,.vt,.panel>h2,.panel h2[id],.boat h3{color:var(--brand)}
 /* documentos obrigatórios nos campos */
 .rtag{display:inline-block;margin-left:8px;padding:0 8px;border-radius:99px;font-size:10.5px;font-weight:600;line-height:17px;vertical-align:1px}
 .rtag.pend{background:var(--warnbg);color:var(--warn)}.rtag.ok{background:var(--okbg);color:var(--ok)}
+/* campo preenchido pela leitura do documento, ainda não conferido */
+.rtag.lido{background:var(--warnbg);color:var(--warn);outline:1px dashed var(--warn);outline-offset:-1px}
 .clip.req{color:var(--warn);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warn) 65%,transparent)}
 .nb{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--warn);color:#fff;font:700 11px/20px var(--font);text-align:center}
 .fnav button[aria-current="true"] .nb{background:#fff;color:var(--warn)}

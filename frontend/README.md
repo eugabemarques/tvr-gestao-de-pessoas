@@ -19,6 +19,12 @@ npm test        # testes (Vitest) das regras em src/dominio e da sincronização
 - `src/servidor/` chamadas à API e sincronização do estado.
 - `src/telas/`, `src/dialogos/`, `src/componentes/` telas em React. `src/estilos.css` é o CSS do protótipo.
 
+## Leitura de documentos
+
+- `src/servidor/ocr.ts` tira o texto do arquivo no navegador: texto embutido do PDF (pdf.js) ou reconhecimento da imagem (Tesseract, português). As bibliotecas só carregam na primeira leitura.
+- `src/dominio/leitura.ts` acha CPF, RG, PIS, título, passaporte, CEP e validade no texto (com dígitos verificadores), com testes em `__testes__/leitura.test.ts`.
+- Os arquivos do Tesseract (cerca de 13 MB) são copiados de `node_modules` para `public/ocr/<versão>/` por `scripts/copiar-ocr.mjs`, que roda sozinho antes de `npm run dev` e `npm run build`. O sistema serve tudo sozinho, sem CDN.
+
 ## Protocolo com o servidor
 
 - `GET /api/me` → `{login, nome, admin}`. Resposta 403 mostra "Seu acesso ainda não foi liberado. Peça ao administrador.".
