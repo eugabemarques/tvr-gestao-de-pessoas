@@ -15,8 +15,10 @@ export interface SecaoFichaPdf {
 }
 
 /**
- * Conteúdo da ficha em PDF: os mesmos dados da pasta, mais cursos/ASO e vacinas.
- * `paginasAnexos` (no dossiê): página onde começa cada documento de `p.docs`, na mesma ordem.
+ * Conteúdo da ficha em PDF: dados pessoais, cursos e exames, e vacinas.
+ * `paginasAnexos` (só no dossiê): página onde começa cada documento de `p.docs`, na mesma ordem.
+ * As listas de documentos (obrigatórios do setor e anexados) só entram no dossiê; a ficha sozinha
+ * fica só com os dados do colaborador.
  */
 export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: number, paginasAnexos?: number[]): { nome: string; sub: string; secoes: SecaoFichaPdf[] } {
   const dados: [string, string][] = campos(S, p).map(([k, v]) => [k, unesc(v || "") || "—"]);
@@ -32,17 +34,17 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
     ? docsDo(p.setor).map((n) => [n, docFor(p.docs, n) ? "Anexado" : opcDoc(n) ? "Opcional" : "Pendente"])
     : [["", "Setor não definido."]];
   const anexos: [string, string][] = (p.docs || []).map((d, i) => [d.campo || "Outros", d.name + (paginasAnexos ? "  ·  página " + paginasAnexos[i] : "")]);
-  return {
-    nome: unesc(p.name),
-    sub: [nomeSetor(p.setor), unesc(p.role || "")].filter(Boolean).join(" · "),
-    secoes: [
-      { titulo: "Dados pessoais", linhas: dados },
-      { titulo: "Cursos e exames", linhas: cursos.length ? cursos : [["", "Nenhum curso cadastrado."]] },
-      { titulo: "Vacinas", linhas: vac },
+  const secoes: SecaoFichaPdf[] = [
+    { titulo: "Dados pessoais", linhas: dados },
+    { titulo: "Cursos e exames", linhas: cursos.length ? cursos : [["", "Nenhum curso cadastrado."]] },
+    { titulo: "Vacinas", linhas: vac },
+  ];
+  if (paginasAnexos)
+    secoes.push(
       { titulo: "Documentos obrigatórios do setor", linhas: obrig },
-      { titulo: paginasAnexos ? "Documentos anexados (a seguir, neste dossiê)" : "Documentos anexados", linhas: anexos.length ? anexos : [["", "Nenhum documento anexado."]] },
-    ],
-  };
+      { titulo: "Documentos anexados (a seguir, neste dossiê)", linhas: anexos.length ? anexos : [["", "Nenhum documento anexado."]] },
+    );
+  return { nome: unesc(p.name), sub: [nomeSetor(p.setor), unesc(p.role || "")].filter(Boolean).join(" · "), secoes };
 }
 
 export type Celula = string | number;

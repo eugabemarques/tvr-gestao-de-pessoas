@@ -80,7 +80,7 @@ describe("ficha e textos", () => {
     expect(c["Endereço"]).toBe("Rua A, 10 - Macaé - CEP 27900000");
     expect(c["Escala"]).toBe("42 dias a bordo e 42 de folga");
   });
-  it("ficha em PDF: dados, cursos, vacinas e documentos", () => {
+  it("ficha em PDF: dados, cursos e vacinas; documentos só no dossiê", () => {
     const S = { boats: [{ id: 1, name: "Netuno" }], courses: [{ pid: 1, name: "CBSP", valid: T + 30 }, { pid: 1, name: "ASO", valid: T - 2 }, { pid: 2, name: "CBSP", valid: T }] };
     const F = fichaPdf(S, { ...p, vac: { cov: T - 100 }, docs: [{ campo: "CBSP", name: "cbsp.pdf" }] }, T);
     expect(F.nome).toBe("Ana & Cia");
@@ -92,12 +92,14 @@ describe("ficha e textos", () => {
       ["CBSP", "Validade 13/12/2026 (vence em 30 dias)"],
     ]);
     expect(sec["Vacinas"][0]).toEqual(["Covid-19", "05/08/2026"]);
-    expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["CBSP", "Anexado"]);
-    expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["Certificado PAM", "Opcional"]);
-    expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["Work Citation", "Pendente"]);
-    expect(sec["Documentos anexados"]).toEqual([["CBSP", "cbsp.pdf"]]);
-    // no dossiê, cada anexo mostra a página onde começa
+    // a ficha sozinha não tem as listas de documentos
+    expect(F.secoes.map((s) => s.titulo)).toEqual(["Dados pessoais", "Cursos e exames", "Vacinas"]);
+    // no dossiê, as listas entram e cada anexo mostra a página onde começa
     const D = fichaPdf(S, { ...p, docs: [{ campo: "CBSP", name: "cbsp.pdf" }, { name: "outro.png" }] }, T, [3, 5]);
+    const dsec = Object.fromEntries(D.secoes.map((s) => [s.titulo, s.linhas]));
+    expect(dsec["Documentos obrigatórios do setor"]).toContainEqual(["CBSP", "Anexado"]);
+    expect(dsec["Documentos obrigatórios do setor"]).toContainEqual(["Certificado PAM", "Opcional"]);
+    expect(dsec["Documentos obrigatórios do setor"]).toContainEqual(["Work Citation", "Pendente"]);
     const ult = D.secoes.at(-1)!;
     expect(ult.titulo).toBe("Documentos anexados (a seguir, neste dossiê)");
     expect(ult.linhas).toEqual([
