@@ -4,7 +4,7 @@ import { Chip, Dialogo } from "../componentes/Comuns";
 import { useAcoes } from "../acoes";
 import { avisoRemoverBarco, cadastrosIncompletos, marcarResolvido, removerBarco, removerCurso, salvarBarco, salvarCurso, tripulantesDoBarco, validarBarco, validarCurso } from "../dominio/cadastros";
 import { diaIso, fmt, toDay } from "../dominio/datas";
-import { ACEITOS, campos, CURSOS, docFor, docsDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
+import { ACEITOS, campos, campoToveri, CURSOS, docFor, docsDo, docsToveriDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
 import { adicionarDobra, barco, cycle, pessoa, previaDobra } from "../dominio/escala";
 import { nomeArquivoFicha, unesc } from "../dominio/texto";
 import { ANOS_NORUEGUES, avisos, isAso, isNoruegues, NORUEGUES, validadeNoruegues } from "../dominio/validade";
@@ -520,6 +520,17 @@ function CorpoPasta({ id, aoFechar }: Fechar & { id: number }) {
         ) : (
           <p className="empty">Setor não definido.</p>
         )}
+        {docsToveriDo(p.setor).length ? (
+          <>
+            <h3 style={{ margin: "16px 0 6px", fontSize: 16 }}>Docs Toveri</h3>
+            {docsToveriDo(p.setor).map((n) => (
+              <div className="pf" key={n}>
+                <span className="mute">{n}</span>
+                <span>{docFor(p.docs, campoToveri(n)) ? <Chip k="ok">Anexado</Chip> : <span className="mute">Opcional</span>}</span>
+              </div>
+            ))}
+          </>
+        ) : null}
         <h3 style={{ margin: "16px 0 6px", fontSize: 16 }}>Documentos anexados</h3>
         {docs.length ? (
           docs.map((f, i) => (

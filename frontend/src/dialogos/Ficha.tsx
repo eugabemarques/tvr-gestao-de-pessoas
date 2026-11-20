@@ -428,7 +428,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
           {navBtn("cursos", <IcLivro />, "Cursos")}
           {navBtn("embarques", <IcAncora />, "Embarques")}
           {navBtn("vacinas", <IcVacina />, "Vacinas")}
-          {navBtn("toveri", <IcPasta />, "Docs Toveri")}
+          {st?.toveri ? navBtn("toveri", <IcPasta />, "Docs Toveri") : null}
         </nav>
         <button className="ghost" id="cremover" type="button" hidden={!cedit} onClick={remover}>
           {confirmar ? "Confirmar remoção" : "Remover colaborador"}
@@ -762,9 +762,9 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
             </div>
           </section>
 
-          <section hidden={sec !== "toveri"}>
+          <section hidden={sec !== "toveri" || !st?.toveri}>
             <h3 className="fh">Documentos Toveri</h3>
-            <p className="mute fintro">Fichas internas da TOVERI. Não há campos para preencher: basta anexar cada ficha assinada.</p>
+            <p className="mute fintro">Fichas internas da TOVERI, anexadas depois da contratação. Não há campos para preencher e nenhuma é obrigatória: basta anexar cada ficha assinada.</p>
             <div className="ftoveri">
               {DOCS_TOVERI.map((n) => {
                 const campo = campoToveri(n);

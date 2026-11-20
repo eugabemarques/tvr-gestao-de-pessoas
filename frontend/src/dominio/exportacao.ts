@@ -1,6 +1,6 @@
 /** Conteúdo das exportações (histórico em Excel e PDF, ficha do colaborador em PDF), sem depender das bibliotecas. */
 import { fmt } from "./datas";
-import { campos, docFor, docsDo, nomeSetor, opcDoc, setor, VACS } from "./documentos";
+import { campos, campoToveri, docFor, docsDo, docsToveriDo, nomeSetor, opcDoc, setor, VACS } from "./documentos";
 import { etapasPeriodo, nomeBarco, type Calculo } from "./escala";
 import { unesc } from "./texto";
 import type { Estado, Pessoa } from "./tipos";
@@ -33,6 +33,7 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
   const obrig: [string, string][] = setor(p.setor)
     ? docsDo(p.setor).map((n) => [n, docFor(p.docs, n) ? "Anexado" : opcDoc(n) ? "Opcional" : "Pendente"])
     : [["", "Setor não definido."]];
+  const toveri: [string, string][] = docsToveriDo(p.setor).map((n) => [n, docFor(p.docs, campoToveri(n)) ? "Anexado" : "Opcional"]);
   const anexos: [string, string][] = (p.docs || []).map((d, i) => [d.campo || "Outros", d.name + (paginasAnexos ? "  ·  página " + paginasAnexos[i] : "")]);
   const secoes: SecaoFichaPdf[] = [
     { titulo: "Dados pessoais", linhas: dados },
@@ -42,6 +43,7 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
   if (paginasAnexos)
     secoes.push(
       { titulo: "Documentos obrigatórios do setor", linhas: obrig },
+      ...(toveri.length ? [{ titulo: "Docs Toveri", linhas: toveri }] : []),
       { titulo: "Documentos anexados (a seguir, neste dossiê)", linhas: anexos.length ? anexos : [["", "Nenhum documento anexado."]] },
     );
   return { nome: unesc(p.name), sub: [nomeSetor(p.setor), unesc(p.role || "")].filter(Boolean).join(" · "), secoes };

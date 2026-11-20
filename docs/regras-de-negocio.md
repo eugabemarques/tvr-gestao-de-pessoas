@@ -104,6 +104,7 @@ Aparecem para quem está embarcado, ou tem embarque começando em até 30 dias (
 Cadastros por setor, carregados com as regras do protótipo:
 
 - **Todos os setores:** RG/CPF/CNH, certidão de nascimento ou casamento, título de eleitor, CTPS, comprovante de residência, comprovante de escolaridade e as três vacinas (Covid-19, DT e febre amarela). Passaporte e PIS entram só se o colaborador tiver.
+- **Docs Toveri (Ambiental e Administrativo; não Manutenção Offshore):** fichas internas anexadas depois da contratação (Dados Pessoais, Contato de Emergência, Dados Bancários, Autodeclaração de Raça, Política de Drogas e Álcool). Opcionais: não geram pendência.
 - **Ambiental:** também CTF Ibama e Work Citation, os cursos CBSP e THUET/BOSIET/FOET e o exame Norueguês/OEUK/ENG1. O **Certificado PAM** é opcional (um diferencial): pode ser cadastrado e anexado, mas não fica pendente.
 - **ASO:** obrigatório para todos os setores, mas **só depois da admissão**. Quem está em standby não aparece com o ASO pendente.
 

@@ -54,7 +54,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 - Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
 - Ficha dividida em seções: Dados pessoais, Cursos, Embarques, Vacinas e Docs Toveri. Pode ser salva incompleta (só o nome é obrigatório).
 - Vacinas: data de cada uma das três vacinas e **um único anexo** com os três comprovantes (fichas antigas com três arquivos separados continuam valendo).
-- Docs Toveri: só anexos (sem campos) das fichas internas: Dados Pessoais, Contato de Emergência, Dados Bancários, Autodeclaração de Raça e Política de Drogas e Álcool. Por ora não contam como pendência obrigatória.
+- Docs Toveri (só setores Ambiental e Administrativo; não aparece em Manutenção Offshore): só anexos, sem campos, das fichas internas anexadas depois da contratação: Dados Pessoais, Contato de Emergência, Dados Bancários, Autodeclaração de Raça e Política de Drogas e Álcool. São opcionais (não contam como pendência) e aparecem na pasta do colaborador e no dossiê.
 - **Pasta do colaborador:** todos os dados, documentos obrigatórios e anexos, com três downloads:
   - **Dossiê (PDF):** a ficha seguida de todos os documentos anexados num único arquivo, com índice das páginas. PDFs entram inteiros; imagens entram numa página A4 com o nome do documento (na orientação certa); um anexo que não abre vira uma página de aviso.
   - **Só a ficha (PDF):** logo da TOVERI, dados pessoais, cursos e exames com validade e vacinas (as listas de documentos ficam só no dossiê).

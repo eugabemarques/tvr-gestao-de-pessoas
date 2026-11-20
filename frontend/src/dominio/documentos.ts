@@ -19,17 +19,20 @@ export const BASE = [
 export interface Setor {
   nome: string;
   escala: boolean;
+  /** Pede as fichas internas da TOVERI (aba Docs Toveri). */
+  toveri: boolean;
   docs: string[];
 }
 
 export const SETORES: Record<string, Setor> = {
-  administrativo: { nome: "Administrativo", escala: false, docs: [] },
+  administrativo: { nome: "Administrativo", escala: false, toveri: true, docs: [] },
   ambiental: {
     nome: "Ambiental",
     escala: true,
+    toveri: true,
     docs: ["CTF Ibama (atualizado)", "CBSP", "THUET / BOSIET / FOET", "Norueguês / OEUK / ENG1", "Certificado PAM", "Work Citation"],
   },
-  manutencao: { nome: "Manutenção Offshore", escala: false, docs: [] },
+  manutencao: { nome: "Manutenção Offshore", escala: false, toveri: false, docs: [] },
 };
 
 export const setor = (s: string | undefined | null): Setor | undefined => (s && Object.prototype.hasOwnProperty.call(SETORES, s) ? SETORES[s] : undefined);
@@ -47,10 +50,12 @@ export const VACS: [ChaveVacina, string][] = [
   ["fa", "Febre amarela"],
 ];
 
-/** Fichas internas da TOVERI (aba "Docs Toveri"): só anexo, sem campos; por ora não são cobradas como obrigatórias. */
+/** Fichas internas da TOVERI (aba "Docs Toveri"): só anexo, sem campos, opcionais; anexadas depois da contratação, nos setores com `toveri` (todos menos Manutenção Offshore). */
 export const DOCS_TOVERI: string[] = ["Dados Pessoais", "Contato de Emergência", "Dados Bancários", "Autodeclaração de Raça", "Política de Drogas e Álcool"];
 /** Campo de anexo de uma ficha da TOVERI (prefixado para não se confundir com os documentos do colaborador). */
 export const campoToveri = (n: string): string => "Docs Toveri: " + n;
+/** Fichas internas pedidas no setor (vazio para Manutenção Offshore ou sem setor). */
+export const docsToveriDo = (s: string | undefined | null): string[] => (setor(s)?.toveri ? DOCS_TOVERI : []);
 
 /** Documento anexado a um item; a vacinação conta com o arquivo único da seção Vacinas ou (fichas antigas) com os três comprovantes separados. */
 export function docFor(docs: Documento[] | undefined, n: string): Documento | null | undefined {

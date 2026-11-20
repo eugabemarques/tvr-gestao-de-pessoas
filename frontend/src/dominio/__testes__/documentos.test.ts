@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toDay } from "../datas";
-import { campoObrigatorio, campos, campoToveri, curCampo, docFor, DOCS_TOVERI, docsDo, erroArq, fichaTexto, pendDocs, reqCursos, reqInfo, syncReqCur, VACDOC } from "../documentos";
+import { campoObrigatorio, campos, campoToveri, curCampo, docFor, DOCS_TOVERI, docsToveriDo, docsDo, erroArq, fichaTexto, pendDocs, reqCursos, reqInfo, syncReqCur, VACDOC } from "../documentos";
 import { fichaPdf } from "../exportacao";
 import { esc, iniciais, nomeArquivoFicha, unesc } from "../texto";
 import type { Pessoa } from "../tipos";
@@ -31,6 +31,12 @@ describe("documentos obrigatórios por setor", () => {
     expect(docFor(vacinas.slice(0, 2), VACDOC)).toBeNull();
     expect(docFor(vacinas, VACDOC)).toEqual({ name: "3 comprovantes na seção Vacinas", virt: true });
     expect(pendDocs({ setor: "administrativo", docs: vacinas })).not.toContain(VACDOC);
+  });
+  it("Docs Toveri: só Ambiental e Administrativo (não Manutenção Offshore)", () => {
+    expect(docsToveriDo("ambiental")).toEqual(DOCS_TOVERI);
+    expect(docsToveriDo("administrativo")).toEqual(DOCS_TOVERI);
+    expect(docsToveriDo("manutencao")).toEqual([]);
+    expect(docsToveriDo("")).toEqual([]);
   });
   it("Docs Toveri: cinco fichas só de anexo, fora das pendências obrigatórias", () => {
     expect(DOCS_TOVERI.length).toBe(5);
@@ -112,6 +118,7 @@ describe("ficha e textos", () => {
     expect(dsec["Documentos obrigatórios do setor"]).toContainEqual(["CBSP", "Anexado"]);
     expect(dsec["Documentos obrigatórios do setor"]).toContainEqual(["Certificado PAM", "Opcional"]);
     expect(dsec["Documentos obrigatórios do setor"]).toContainEqual(["Work Citation", "Pendente"]);
+    expect(dsec["Docs Toveri"]).toContainEqual(["Dados Bancários", "Opcional"]);
     const ult = D.secoes.at(-1)!;
     expect(ult.titulo).toBe("Documentos anexados (a seguir, neste dossiê)");
     expect(ult.linhas).toEqual([
