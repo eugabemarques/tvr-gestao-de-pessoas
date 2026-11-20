@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   avisoRemoverBarco,
+  cursosPreenchidos,
   formDe,
+  pendenciasColab,
   marcarResolvido,
   removerBarco,
   removerColab,
@@ -36,18 +38,33 @@ const valido = (x: Partial<FormColab> = {}): FormColab => ({
   ...x,
 });
 
-describe("validação da ficha (ordem do protótipo)", () => {
+describe("validação da ficha", () => {
   it("aceita uma ficha completa", () => expect(validarColab(valido())).toBeNull());
+  it("aceita ficha só com o nome (cadastro incompleto)", () => {
+    const f = { ...formDe(estadoVazio(), null), nome: "Ana", setor: "ambiental" };
+    expect(validarColab(f)).toBeNull();
+    expect(pendenciasColab(f)).toEqual(["RG", "CPF", "nome da mãe", "e-mail", "celular", "contato de emergência", "rua", "número do endereço", "CEP", "escala de embarque"]);
+  });
+  it("ficha completa não tem pendências", () => expect(pendenciasColab(valido())).toEqual([]));
+  it("ignora linhas de curso em branco", () => {
+    const linhas = [{ name: "", valid: null }, { name: "CBSP", valid: T }];
+    expect(cursosPreenchidos(linhas)).toEqual([{ name: "CBSP", valid: T }]);
+    expect(validarCursosFicha(cursosPreenchidos(linhas))).toBeNull();
+  });
+  it("cadastro incompleto do setor ambiental é salvo sem escala", () => {
+    const S: Estado = estadoVazio();
+    const p = salvarColab(S, null, { ...formDe(S, null), nome: "Ana", setor: "ambiental", data: "" }, [], [], T);
+    expect(p.embark).toBeNull();
+    expect(p.dias).toBeNull();
+    expect(S.hist || []).toEqual([]);
+  });
   it.each([
     [{ nome: " " }, "cnome", "Informe o nome completo."],
-    [{ cpf: "123" }, "ccpf", "O CPF precisa ter 11 números."],
+    [{ cpf: "123" }, "ccpf", "O CPF precisa ter 11 números (ou deixe em branco)."],
     [{ pis: "12" }, "cpis", "O PIS precisa ter 11 números (ou deixe em branco)."],
-    [{ email: "ana@x" }, "cemail", "Informe um e-mail válido."],
-    [{ cel: "99999-000" }, "ccel", "Informe o celular com DDD."],
-    [{ setor: "" }, "csetor", "Escolha o setor."],
-    [{ cep: "123" }, "ccep", "O CEP precisa ter 8 números."],
-    [{ setor: "ambiental", data: "" }, "cdata", "No setor ambiental, informe a data de embarque da escala."],
-    [{ setor: "ambiental", data: "2026-11-01", dias: "0" }, "cdias", "No setor ambiental, informe os dias da escala."],
+    [{ email: "ana@x" }, "cemail", "Informe um e-mail válido (ou deixe em branco)."],
+    [{ cel: "99999-000" }, "ccel", "Informe o celular com DDD (ou deixe em branco)."],
+    [{ cep: "123" }, "ccep", "O CEP precisa ter 8 números (ou deixe em branco)."],
     [{ ff: "2026-12-01" }, "cfi", "Informe o início das férias."],
     [{ fi: "2026-12-01" }, "cff", "Informe o fim das férias."],
     [{ fi: "2026-12-10", ff: "2026-12-01" }, "cff", "O fim das férias precisa ser depois do início."],

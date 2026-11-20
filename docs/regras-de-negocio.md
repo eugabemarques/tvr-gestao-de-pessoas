@@ -88,5 +88,7 @@ O colaborador sem data de admissão está em **standby**: cadastrado, mas ainda 
 
 ## Cadastro de colaboradores
 
+- A ficha pode ser salva incompleta: só o **nome** é obrigatório. Os campos em branco não impedem salvar; ao salvar, o sistema avisa o que ficou faltando (RG, CPF, contato, endereço, setor e, no setor Ambiental, a escala). Um campo preenchido de forma errada (CPF, PIS, e-mail, celular ou CEP com formato inválido) ainda impede salvar.
+- No setor Ambiental sem escala informada, o colaborador é salvo sem embarque previsto.
 - O CPF é validado pelos dígitos verificadores e não pode se repetir.
 - Colaboradores não são apagados: o desligamento é registrado por data e o histórico é mantido. O banco recusa apagar qualquer registro que tenha histórico ligado a ele.

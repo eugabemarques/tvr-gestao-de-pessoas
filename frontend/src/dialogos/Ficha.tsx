@@ -2,7 +2,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
 import { IcAncora, IcClipe, IcDados, IcFechar, IcLivro, IcOk, IcPessoa, IcVacina } from "../componentes/Icones";
-import { formDe, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
+import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
 import { fmt, toDay } from "../dominio/datas";
 import {
   ACEITOS,
@@ -278,18 +278,23 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
       focar(bad.campo);
       return;
     }
-    const bc = validarCursosFicha(ccur);
+    const cursos = cursosPreenchidos(ccur);
+    const bc = validarCursosFicha(cursos);
     if (bc) {
       irPara("cursos");
       setErro(bc.msg);
-      focar((bc.semNome ? "fcn" : "fcv") + bc.i);
+      focar("fcv" + ccur.indexOf(cursos[bc.i]));
       return;
     }
     setErro("");
     const novo = !cedit;
-    loja.mutar((E) => salvarColab(E, cedit, f, docs, ccur));
+    loja.mutar((E) => salvarColab(E, cedit, f, docs, cursos));
     aoFechar();
-    toast(novo ? "Colaborador adicionado." : "Colaborador atualizado.");
+    const falta = pendenciasColab(f);
+    toast(
+      (novo ? "Colaborador adicionado." : "Colaborador atualizado.") +
+        (falta.length ? " Cadastro incompleto, falta: " + falta.join(", ") + "." : ""),
+    );
   };
   const remover = () => {
     if (!confirmar) {

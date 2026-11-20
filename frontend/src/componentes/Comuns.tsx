@@ -78,7 +78,8 @@ export function Toast() {
       setM(x);
       setOn(true);
       clearTimeout(t);
-      t = setTimeout(() => setOn(false), 2400);
+      // mensagens longas (ex.: lista do que falta no cadastro) ficam mais tempo na tela
+      t = setTimeout(() => setOn(false), Math.min(8000, Math.max(2400, x.length * 60)));
     });
     return () => {
       off();

@@ -89,33 +89,52 @@ export interface ErroForm {
   msg: string;
 }
 
-/** Validações da ficha na mesma ordem do protótipo; devolve a primeira que falhar. */
+/**
+ * Validações que impedem salvar a ficha. Só o nome é obrigatório: os demais campos podem ficar
+ * em branco (cadastro incompleto) e só bloqueiam se preenchidos de forma errada.
+ */
 export function validarColab(f: FormColab): ErroForm | null {
   const v = (x: string) => x.trim(),
     dg = (x: string) => v(x).replace(/\D/g, "");
-  const amb = !!setor(v(f.setor))?.escala,
-    n = parseInt(f.dias) || 0;
   const checks: [string, boolean, string][] = [
     ["cnome", !!v(f.nome), "Informe o nome completo."],
-    ["crg", !!v(f.rg), "Informe o RG."],
-    ["ccpf", dg(f.cpf).length === 11, "O CPF precisa ter 11 números."],
+    ["ccpf", !dg(f.cpf) || dg(f.cpf).length === 11, "O CPF precisa ter 11 números (ou deixe em branco)."],
     ["cpis", !dg(f.pis) || dg(f.pis).length === 11, "O PIS precisa ter 11 números (ou deixe em branco)."],
-    ["cmae", !!v(f.mae), "Informe o nome da mãe."],
-    ["cemail", /^\S+@\S+\.\S+$/.test(v(f.email)), "Informe um e-mail válido."],
-    ["ccel", dg(f.cel).length >= 10, "Informe o celular com DDD."],
-    ["csetor", !!v(f.setor), "Escolha o setor."],
-    ["cemerg", !!v(f.emerg), "Informe o contato de emergência."],
-    ["crua", !!v(f.rua), "Informe a rua."],
-    ["cnum", !!v(f.num), "Informe o número do endereço."],
-    ["ccep", dg(f.cep).length === 8, "O CEP precisa ter 8 números."],
-    ["cdata", !amb || !!f.data, "No setor ambiental, informe a data de embarque da escala."],
-    ["cdias", !amb || n >= 1, "No setor ambiental, informe os dias da escala."],
+    ["cemail", !v(f.email) || /^\S+@\S+\.\S+$/.test(v(f.email)), "Informe um e-mail válido (ou deixe em branco)."],
+    ["ccel", !dg(f.cel) || dg(f.cel).length >= 10, "Informe o celular com DDD (ou deixe em branco)."],
+    ["ccep", !dg(f.cep) || dg(f.cep).length === 8, "O CEP precisa ter 8 números (ou deixe em branco)."],
     ["cfi", !f.ff || !!f.fi, "Informe o início das férias."],
     ["cff", !f.fi || !!f.ff, "Informe o fim das férias."],
     ["cff", !f.fi || !f.ff || f.ff >= f.fi, "O fim das férias precisa ser depois do início."],
   ];
   const bad = checks.find((c) => !c[1]);
   return bad ? { campo: bad[0], msg: bad[2] } : null;
+}
+
+/** Informações que ficaram faltando na ficha (não impedem salvar; servem para avisar o RH). */
+export function pendenciasColab(f: FormColab): string[] {
+  const v = (x: string) => x.trim();
+  const amb = !!setor(v(f.setor))?.escala,
+    n = parseInt(f.dias) || 0;
+  const itens: [boolean, string][] = [
+    [!!v(f.rg), "RG"],
+    [!!v(f.cpf), "CPF"],
+    [!!v(f.mae), "nome da mãe"],
+    [!!v(f.email), "e-mail"],
+    [!!v(f.cel), "celular"],
+    [!!v(f.setor), "setor"],
+    [!!v(f.emerg), "contato de emergência"],
+    [!!v(f.rua), "rua"],
+    [!!v(f.num), "número do endereço"],
+    [!!v(f.cep), "CEP"],
+    [!amb || (!!f.data && n >= 1), "escala de embarque"],
+  ];
+  return itens.filter((x) => !x[0]).map((x) => x[1]);
+}
+
+/** Tira da ficha as linhas de curso em branco (sem curso escolhido). */
+export function cursosPreenchidos(ccur: LinhaCurso[]): LinhaCurso[] {
+  return ccur.filter((r) => !!r.name);
 }
 
 /** Linhas de curso incompletas: devolve o índice e a mensagem. */
