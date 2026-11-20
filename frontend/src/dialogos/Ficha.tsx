@@ -736,19 +736,22 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
           <section hidden={sec !== "vacinas"}>
             <h3 className="fh">Vacinas</h3>
             <p className="mute fintro">Informe a data de cada vacina e anexe um único arquivo com os três comprovantes (Covid-19, DT e febre amarela).</p>
+            {/* Um clipe só, na linha do campo do meio (centro dos três); as outras linhas reservam o mesmo espaço. */}
             <div className="fvacs">
-              <div className="fvacs-campos">
-                {VACS.map(([k, nome]) => {
-                  const id = { cov: "cvcov", dt: "cvdt", fa: "cvfa" }[k as ChaveVacina];
-                  const rot = nome + (k === "fa" ? " · data da dose" : " · data da última dose");
-                  return (
-                    <Campo key={k} ctx={ctx} id={id} rotulo={rot} w2>
-                      <input id={id} type="date" autoComplete="off" value={f.vac[k]} onChange={(e) => set("vac", { ...f.vac, [k]: e.target.value })} />
-                    </Campo>
-                  );
-                })}
-              </div>
-              <Clip ctx={ctx} anexo={VACDOC} rotulo="Comprovante de vacinação (as três vacinas)" />
+              {VACS.map(([k, nome], i) => {
+                const id = { cov: "cvcov", dt: "cvdt", fa: "cvfa" }[k as ChaveVacina];
+                const rot = nome + (k === "fa" ? " · data da dose" : " · data da última dose");
+                return (
+                  <Campo key={k} ctx={ctx} id={id} rotulo={rot} w2>
+                    <input id={id} type="date" autoComplete="off" value={f.vac[k]} onChange={(e) => set("vac", { ...f.vac, [k]: e.target.value })} />
+                    {i === Math.floor(VACS.length / 2) ? (
+                      <Clip ctx={ctx} anexo={VACDOC} rotulo="Comprovante de vacinação (as três vacinas)" />
+                    ) : (
+                      <span className="clip-esp" aria-hidden="true" />
+                    )}
+                  </Campo>
+                );
+              })}
             </div>
             <div className="fvacs-doc">
               <RTag ctx={ctx} anexo={VACDOC} />
