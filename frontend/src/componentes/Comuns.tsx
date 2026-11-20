@@ -56,11 +56,22 @@ export function ChipSituacao({ z, semBarco }: { z: Situacao; semBarco?: boolean 
   if (z.k === "ferias") return <Chip k="vac">Férias</Chip>;
   if (z.k === "none") return <span className="mute">Sem escala</span>;
   if (z.k === "emb") return <Chip k="sea">{"Embarcado" + (!semBarco && z.barco ? " · " + unescTexto(z.barco) : "")}</Chip>;
+  if (z.k === "translado") return <Chip k="warn">{z.sentido === "ida" ? "Translado de ida" : "Translado de volta"}</Chip>;
   return <Chip k="ok">Folga</Chip>;
 }
 
 export const subSituacao = (z: Situacao): string =>
-  z.k === "ferias" ? "até " + fmt(z.fim) : z.k === "emb" ? "até " + fmt(z.fim) : z.k === "folga" ? "embarca em " + fmt(z.proximo) : "";
+  z.k === "ferias"
+    ? "até " + fmt(z.fim)
+    : z.k === "emb"
+      ? "até " + fmt(z.fim)
+      : z.k === "translado"
+        ? z.sentido === "ida"
+          ? "embarca em " + fmt(z.embarque)
+          : "folga a partir de " + fmt(z.c.e.folgaIni)
+        : z.k === "folga"
+          ? "embarca em " + fmt(z.proximo)
+          : "";
 
 /** Chip de documentos pendentes do setor. */
 export function ChipPendencias({ p }: { p: Pessoa }) {

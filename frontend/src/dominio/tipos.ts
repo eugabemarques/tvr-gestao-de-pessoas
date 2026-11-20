@@ -31,6 +31,9 @@ export interface Pessoa {
   dias?: number | null;
   dobra?: number;
   base?: number;
+  /** Translado do embarque atual: dias de ida antes do embarque (ausente = 1) e de volta depois do último dia a bordo (ausente = 0). */
+  ti?: number;
+  tv?: number;
   fIni?: number | null;
   fFim?: number | null;
   docs?: Documento[];
@@ -78,6 +81,10 @@ export interface Embarque {
   dias: number;
   dobra?: number;
   boat?: number | null;
+  /** Dias de translado de ida antes do embarque (ausente = 1). */
+  ti?: number;
+  /** Dias de translado de volta depois do último dia a bordo (ausente = 0, volta no último dia). */
+  tv?: number;
 }
 
 export interface Estado {

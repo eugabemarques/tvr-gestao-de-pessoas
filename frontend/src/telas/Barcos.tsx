@@ -30,7 +30,8 @@ export function Barcos({ oculto }: { oculto: boolean }) {
     const z = lst.map((p) => ({ p, s: situacao(S, p, T) }));
     type Com<K extends Situacao["k"]> = { p: Pessoa; s: Extract<Situacao, { k: K }> };
     const on = z.filter((x): x is Com<"emb"> => x.s.k === "emb").sort((a, b) => a.s.c.end - b.s.c.end),
-      nx = z.filter((x): x is Com<"folga"> => x.s.k === "folga" && x.s.c.next - T <= 30).sort((a, b) => a.s.c.next - b.s.c.next),
+      // de folga ou em translado (de ida: embarca em seguida) com embarque nos próximos 30 dias
+      nx = z.filter((x): x is Com<"folga" | "translado"> => (x.s.k === "folga" || x.s.k === "translado") && x.s.c.next - T <= 30).sort((a, b) => a.s.c.next - b.s.c.next),
       fe = z.filter((x) => x.s.k === "ferias");
     return (
       <article className="panel boat" key={b ? b.id : "sem"}>
@@ -55,7 +56,7 @@ export function Barcos({ oculto }: { oculto: boolean }) {
           </p>
         ) : null}
         {bloco("A bordo hoje", on.map((x) => item(x.p, "até " + fmt(x.s.c.end))), "Ninguém a bordo hoje.")}
-        {bloco("Próximos embarques (30 dias)", nx.map((x) => item(x.p, "embarca em " + fmt(x.s.c.next))), "Nenhum embarque previsto.")}
+        {bloco("Próximos embarques (30 dias)", nx.map((x) => item(x.p, (x.s.k === "translado" && x.s.sentido === "ida" ? "em translado · " : "") + "embarca em " + fmt(x.s.c.next))), "Nenhum embarque previsto.")}
         {fe.length ? bloco("De férias", fe.map((x) => item(x.p, "até " + fmt(x.p.fFim as number))), "") : null}
         {b ? null : (
           <p className="mute" style={{ marginTop: 10 }}>

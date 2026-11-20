@@ -26,6 +26,9 @@ button.ghost{background:transparent;color:var(--mute);border:1px solid var(--lin
 .track{display:flex;height:34px;border-radius:6px;overflow:hidden;margin:10px 0 6px;font-size:13px;font-weight:600}
 .track div{display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden}
 .t1{background:var(--sea);color:var(--accent-ink)}.t2{background:var(--rest);color:var(--ink)}
+/* translado (dia trabalhado, sem folga): faixa listrada entre as etapas */
+.t3{background:repeating-linear-gradient(135deg,var(--warnbg) 0 6px,color-mix(in srgb,var(--warn) 22%,var(--warnbg)) 6px 12px);color:var(--warn);justify-content:center;min-width:28px;padding:0 4px!important}
+.facts div.tr{border-left-color:var(--warn)}
 .dates{display:flex;justify-content:space-between;color:var(--mute);font-size:13px;gap:8px}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
 .facts div{border-left:3px solid var(--sea);padding-left:10px}
@@ -101,6 +104,7 @@ header h1{font-size:22px}
 .vt{font-size:26px;margin:0 24px 16px}
 .cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:16px}
 .r3 .card:first-child{grid-column:3}
+.r4 .card:first-child{grid-column:2}
 .card{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;min-height:104px;padding:12px;text-align:center;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;font-weight:500;font-size:14px}
 .card b{font:700 30px var(--font)}
 .card:hover{border-color:var(--mute)}
@@ -108,7 +112,7 @@ header h1{font-size:22px}
 .card.bad b{color:var(--bad)}.card.warn b{color:var(--warn)}
 .av{display:flex;gap:4px}
 .av i{font:600 12px var(--font);width:26px;height:26px;border-radius:50%;background:var(--sea);color:var(--accent-ink);display:grid;place-items:center}
-@media(max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.r3 .card:first-child{grid-column:auto}}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.r3 .card:first-child,.r4 .card:first-child{grid-column:auto}}
 .chk{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-weight:400}
 .chk .ghost{padding:4px 10px;font-size:13px}
 @media(max-width:560px){.chk{grid-template-columns:1fr auto}}

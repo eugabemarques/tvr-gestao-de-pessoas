@@ -94,9 +94,28 @@ describe("gravar colaborador", () => {
     const S = estadoVazio();
     const p = salvarColab(S, null, valido({ setor: "ambiental", data: "2026-11-01", dias: "42", barco: "" }), [], [{ name: "CBSP", valid: T, req: true }, { name: "PAM", valid: null, req: true }], 5000);
     expect(p).toMatchObject({ id: 5000, name: "Ana &lt;Ribeiro&gt;", embark: toDay("2026-11-01"), dias: 42, dobra: 0, base: 42, boat: null });
-    expect(S.hist).toEqual([{ pid: 5000, ini: toDay("2026-11-01"), dias: 42, dobra: 0, boat: null }]);
+    expect(S.hist).toEqual([{ pid: 5000, ini: toDay("2026-11-01"), dias: 42, dobra: 0, boat: null, ti: 1, tv: 0 }]);
     expect(S.courses).toEqual([{ pid: 5000, name: "CBSP", valid: T }]);
     expect(formDe(S, p).nome).toBe("Ana <Ribeiro>");
+    // translado padrão: a ficha mostra os campos vazios (= padrão)
+    expect(formDe(S, p)).toMatchObject({ ida: "", volta: "" });
+  });
+  it("translado informado na ficha: grava os dias e volta a mostrar as datas", () => {
+    const S = estadoVazio();
+    const f = valido({ setor: "ambiental", data: "2026-11-17", dias: "42", ida: "2026-11-15", volta: "2026-12-29" });
+    const p = salvarColab(S, null, f, [], [], 5000);
+    // ida 2 dias antes; último dia a bordo 28/12, volta 29/12 = 1 dia depois
+    expect(p).toMatchObject({ ti: 2, tv: 1 });
+    expect(S.hist[0]).toMatchObject({ ti: 2, tv: 1 });
+    expect(formDe(S, p)).toMatchObject({ ida: "2026-11-15", volta: "2026-12-29" });
+    // edição ajusta o histórico do mesmo embarque
+    salvarColab(S, p.id, { ...formDe(S, p), volta: "" }, [], [], 5000);
+    expect(S.hist[0]).toMatchObject({ ti: 2, tv: 0 });
+  });
+  it("datas de translado erradas não deixam salvar", () => {
+    expect(validarColab(valido({ setor: "ambiental", data: "2026-11-17", ida: "2026-11-18" }))).toMatchObject({ campo: "cida" });
+    expect(validarColab(valido({ setor: "ambiental", data: "2026-11-17", dias: "42", volta: "2026-12-20" }))).toMatchObject({ campo: "cvolta" });
+    expect(validarColab(valido({ setor: "ambiental", data: "2026-11-17", dias: "42", ida: "2026-11-16", volta: "2026-12-29" }))).toBeNull();
   });
   it("setor sem escala não grava embarque; edição zera a dobra se a escala mudar", () => {
     const S: Estado = { ...estadoVazio(), people: [{ id: 1, name: "A", role: "", setor: "ambiental", embark: T, dias: 42, dobra: 7 }] };

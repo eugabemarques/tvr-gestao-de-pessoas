@@ -13,7 +13,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 | Login | "Entrar com Microsoft" (Entra ID, só contas da TOVERI) + lista de e-mails liberados |
 | Dados | Compartilhados entre todos os usuários (SQLite no App Service), com auditoria de alterações e de arquivos abertos |
 | Documentos | Anexos de até 20 MB (PDF ou imagem), com cópia automática para a pasta do RH no SharePoint |
-| Regras de escala | Regras confirmadas pelo RH implementadas e testadas no back end, configuráveis por vigência; ainda não ligadas às telas (ver abaixo) |
+| Regras de escala | Escala 42x42 com translado de ida e de volta nas telas; regras de compensação e vigência no back end, ainda não ligadas às telas (ver abaixo) |
 | Testes | Back end (xUnit) e telas (Vitest); os do back end rodam no GitHub a cada envio |
 
 ## Estrutura do repositório
@@ -69,9 +69,12 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 
 Detalhes em [docs/regras-de-negocio.md](docs/regras-de-negocio.md).
 
-**Em uso nas telas** (vindas do protótipo):
-- Escala 42x42: 42 dias embarcado e 42 dias de folga; o dia do embarque conta como dia 1.
-- Folga de 1 dia para cada dia embarcado, inclusive nos dias de dobra. Depois de uma dobra, os ciclos seguintes voltam ao padrão.
+**Em uso nas telas:**
+- Escala 42x42 com **translado**: cada ciclo é translado de ida → 42 dias a bordo → translado de volta → 42 dias de folga. O dia do embarque conta como dia 1 a bordo.
+- **Translado de ida**: por padrão, o dia anterior ao embarque. **Translado de volta**: por padrão, no próprio último dia a bordo; se for no dia seguinte, o RH ajusta a data. O translado conta como **dia trabalhado** e **não gera folga**.
+- Folga de 1 dia para cada dia a bordo, inclusive nos dias de dobra; começa no dia seguinte ao translado de volta. Depois de uma dobra, os ciclos seguintes voltam ao padrão.
+- Próximo ciclo: translado de ida no dia seguinte ao fim da folga e embarque no outro dia (ciclo padrão de 85 dias: 1 + 42 + 42).
+- Embarques antigos, sem translado gravado, usam o padrão.
 
 **Já implementadas no back end, ainda não ligadas às telas** (respostas do RH):
 - Folga não gozada vira saldo compensado depois (a compensação adia o próximo embarque).
@@ -94,7 +97,7 @@ Compila e testa telas e back end e envia para o App Service. Requer Node.js, .NE
 ## Próximos passos
 
 - **Banco de dados:** trocar o SQLite atual pelo Azure SQL Database (o modelo com Entity Framework já está no back end).
-- **Regras do RH nas telas:** usar as regras do back end (compensação, Aguardando, ASO após admissão) e permitir que o RH as ajuste, com data de início de vigência.
+- **Regras do RH nas telas:** usar as regras do back end (compensação, Aguardando, ASO após admissão) e permitir que o RH as ajuste, com data de início de vigência. Antes disso, levar o **translado** (hoje só nas telas) para o calculador do back end.
 - **Infraestrutura como código:** recursos do Azure descritos em Bicep, com Key Vault e Application Insights.
 - **Avisos de vencimento por e-mail:** tarefa diária no Azure Functions.
 - **LGPD:** ASO e vacinação tratados como dados sensíveis.

@@ -3,7 +3,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
 import { IcAncora, IcClipe, IcDados, IcFechar, IcLivro, IcOk, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
-import { fmt, toDay } from "../dominio/datas";
+import { diaIso, fmt, toDay } from "../dominio/datas";
 import { extrairDoDocumento, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
 import {
   ACEITOS,
@@ -19,7 +19,7 @@ import {
   type LinhaCurso,
   type SecaoFicha,
 } from "../dominio/documentos";
-import { nomeBarco, periodos, pessoa, situacaoPeriodo } from "../dominio/escala";
+import { etapasPeriodo, nomeBarco, periodos, pessoa, situacaoPeriodo, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
 import { iniciais, unesc } from "../dominio/texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "../dominio/tipos";
 import { courseState, isAso, stAso } from "../dominio/validade";
@@ -29,7 +29,7 @@ import { guardar } from "../servidor/api";
 type Secao = SecaoFicha | "embarques";
 
 /** Campos validados que ficam na seção Embarques. */
-const DA_SECAO_EMBARQUES = new Set(["cdata", "cdias", "cfi", "cff"]);
+const DA_SECAO_EMBARQUES = new Set(["cida", "cdata", "cdias", "cvolta", "cfi", "cff"]);
 
 interface Ctx {
   docs: Documento[];
@@ -129,9 +129,7 @@ function EmbarquesFicha({ S, p }: { S: Estado; p: Pessoa | undefined }) {
       </thead>
       <tbody>
         {per.map((x, i) => {
-          const t = x.dias + x.dobra,
-            fb = x.ini + t - 1,
-            ff = x.ini + 2 * t - 1,
+          const e = etapasPeriodo(x),
             s = situacaoPeriodo(x, T);
           return (
             <tr key={i}>
@@ -139,17 +137,29 @@ function EmbarquesFicha({ S, p }: { S: Estado; p: Pessoa | undefined }) {
                 <b>{i + 1 + "º"}</b>
               </td>
               <td>
-                {fmt(x.ini) + " a " + fmt(fb)}
-                <div className="mute">{x.src}</div>
+                {fmt(x.ini) + " a " + fmt(e.ultimoBordo)}
+                <div className="mute">
+                  {x.src + " · translado " + fmt(e.ida) + (e.volta > e.ultimoBordo ? " e " + fmt(e.volta) : "")}
+                </div>
               </td>
               <td>
-                {t}
+                {e.A}
                 {x.dobra ? <div className="mute">{"dobra +" + x.dobra}</div> : null}
               </td>
-              <td>{fmt(ff)}</td>
+              <td>{fmt(e.folgaFim)}</td>
               <td>{unesc(nomeBarco(S, x.boat)) || <span className="mute">—</span>}</td>
               <td>
-                {s === "Previsto" ? <Chip k="warn">Previsto</Chip> : s === "Embarcado" ? <Chip k="sea">Embarcado</Chip> : s === "Folga" ? <Chip k="ok">Folga</Chip> : <span className="mute">Concluído</span>}
+                {s === "Previsto" ? (
+                  <Chip k="warn">Previsto</Chip>
+                ) : s === "Translado" ? (
+                  <Chip k="warn">Translado</Chip>
+                ) : s === "Embarcado" ? (
+                  <Chip k="sea">Embarcado</Chip>
+                ) : s === "Folga" ? (
+                  <Chip k="ok">Folga</Chip>
+                ) : (
+                  <span className="mute">Concluído</span>
+                )}
               </td>
             </tr>
           );
@@ -641,6 +651,12 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                   </div>
                 </div>
                 <div className="ff">
+                  <label htmlFor="cida">Translado de ida</label>
+                  <div className="fin">
+                    <input type="date" id="cida" value={f.ida || (f.data ? diaIso(toDay(f.data) - TI_PADRAO) : "")} onChange={(e) => set("ida", e.target.value)} />
+                  </div>
+                </div>
+                <div className="ff">
                   <label htmlFor="cdata">Data do embarque atual ou do próximo</label>
                   <div className="fin">
                     <input type="date" id="cdata" {...txt("data")} />
@@ -652,7 +668,21 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                     <input type="number" id="cdias" min="1" max="120" {...txt("dias")} />
                   </div>
                 </div>
+                <div className="ff">
+                  <label htmlFor="cvolta">Translado de volta</label>
+                  <div className="fin">
+                    <input
+                      type="date"
+                      id="cvolta"
+                      value={f.volta || (f.data ? diaIso(toDay(f.data) + (parseInt(f.dias) || 0) + (p && p.embark === toDay(f.data) && String(p.dias) === f.dias ? p.dobra || 0 : 0) - 1 + TV_PADRAO) : "")}
+                      onChange={(e) => set("volta", e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
+              <p className="mute" style={{ margin: "0 0 12px" }}>
+                O translado conta como dia trabalhado e não gera folga. Padrão: ida no dia anterior ao embarque e volta no último dia a bordo; se a volta for no dia seguinte, ajuste a data.
+              </p>
             </div>
             <p className="mute" id="cescoff" hidden={!!st?.escala}>
               A escala de embarque é obrigatória apenas para o setor Ambiental. O setor é escolhido em Dados pessoais.

@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { useAcoes } from "../acoes";
 import { Chip } from "../componentes/Comuns";
-import { fmt, iso, toDay } from "../dominio/datas";
-import { barco, cycle, dadosHistorico, emFerias, nomeBarco, pessoa, previaRegistro, registrarEmbarque } from "../dominio/escala";
+import { diaIso, fmt, iso, toDay } from "../dominio/datas";
+import { barco, cycle, dadosHistorico, emFerias, erroTranslado, nomeBarco, pessoa, previaRegistro, registrarEmbarque, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
 import { pdfHistorico, planilhaHistorico } from "../dominio/exportacao";
 import { unesc } from "../dominio/texto";
 import { AGORA, loja, T, toast, useEstado } from "../loja";
@@ -16,6 +16,9 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
   const [tocado, setTocado] = useState(false);
   const [data, setData] = useState(iso(AGORA));
   const [dias, setDias] = useState("42");
+  // translado: null = padrão (ida no dia anterior ao embarque, volta no último dia a bordo)
+  const [ida, setIda] = useState<string | null>(null);
+  const [volta, setVolta] = useState<string | null>(null);
 
   const comEscala = S.people.filter((p) => p.embark != null);
   const pidEf = comEscala.some((p) => String(p.id) === pid) ? pid : comEscala.length ? String(comEscala[0].id) : "";
@@ -23,8 +26,14 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
   const barcoEf = tocado ? (bsel === "" || barco(S, +bsel) ? bsel : "") : pp && barco(S, pp.boat) ? String(pp.boat) : "";
 
   const d = toDay(data || iso(AGORA)),
-    n = Math.max(1, parseInt(dias) || 0);
-  const r = previaRegistro(d, n);
+    n = Math.max(1, parseInt(dias) || 0),
+    ultimo = d + n - 1;
+  const idaEf = ida ?? diaIso(d - TI_PADRAO),
+    voltaEf = volta ?? diaIso(ultimo + TV_PADRAO);
+  const ti = idaEf ? d - toDay(idaEf) : TI_PADRAO,
+    tv = voltaEf ? toDay(voltaEf) - ultimo : TV_PADRAO;
+  const erroTr = erroTranslado(ti, tv);
+  const r = previaRegistro(d, n, erroTr ? TI_PADRAO : ti, erroTr ? TV_PADRAO : tv);
 
   const salvar = () => {
     const p = pessoa(S, pidEf),
@@ -33,8 +42,14 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
       toast("Informe colaborador, data e dias embarcados.");
       return;
     }
-    loja.mutar((E) => registrarEmbarque(E, p.id, toDay(data), nd, barcoEf ? +barcoEf : null));
+    if (erroTr) {
+      toast(erroTr);
+      return;
+    }
+    loja.mutar((E) => registrarEmbarque(E, p.id, toDay(data), nd, barcoEf ? +barcoEf : null, ti, tv));
     setTocado(false);
+    setIda(null);
+    setVolta(null);
     toast("Registro salvo para " + unesc(p.name) + ".");
   };
 
@@ -79,6 +94,10 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
             </select>
           </label>
           <label>
+            Translado de ida
+            <input type="date" id="tida" value={idaEf} onChange={(e) => setIda(e.target.value)} />
+          </label>
+          <label>
             Data de embarque
             <input type="date" id="data" value={data} onChange={(e) => setData(e.target.value)} />
           </label>
@@ -86,38 +105,74 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
             Dias embarcados
             <input type="number" id="dias" min="1" max="120" value={dias} onChange={(e) => setDias(e.target.value)} />
           </label>
+          <label>
+            Translado de volta
+            <input type="date" id="tvolta" value={voltaEf} onChange={(e) => setVolta(e.target.value)} />
+          </label>
+          <p className="mute" style={{ margin: "-4px 0 10px", fontSize: 13 }}>
+            Padrão: ida no dia anterior ao embarque e volta no último dia a bordo. Se a volta for no dia seguinte, ajuste a data.
+          </p>
+          {erroTr ? (
+            <p className="ferr" role="alert">
+              {erroTr}
+            </p>
+          ) : null}
           <button id="salvar" onClick={salvar}>
             Salvar registro
           </button>
         </div>
         <div className="res" aria-live="polite">
           <h3 id="r-folga">{n + " dias"}</h3>
-          <p>dias de folga conquistados (1 dia de folga para cada dia embarcado)</p>
+          <p>
+            {"dias de folga conquistados (1 dia de folga para cada dia a bordo) · " + r.trabalhados + " dias trabalhados" + (r.translado ? ", com " + r.translado + " de translado" : "")}
+          </p>
           <div className="track" id="r-track">
+            {r.inicio > r.ida ? (
+              <div className="t3" style={{ flex: Math.max(3, r.inicio - r.ida) }} title={"Translado de ida · " + (r.inicio - r.ida) + (r.inicio - r.ida > 1 ? " dias" : " dia")}>
+                ⇢
+              </div>
+            ) : null}
             <div className="t1" style={{ flex: n }}>
               {"A bordo · " + n + " dias"}
             </div>
+            {r.volta > r.ultimoBordo ? (
+              <div className="t3" style={{ flex: Math.max(3, r.volta - r.ultimoBordo) }} title={"Translado de volta · " + (r.volta - r.ultimoBordo) + (r.volta - r.ultimoBordo > 1 ? " dias" : " dia")}>
+                ⇠
+              </div>
+            ) : null}
             <div className="t2" style={{ flex: n }}>
               {"Folga · " + n + " dias"}
             </div>
           </div>
           <div className="dates" id="r-dates">
-            <span>{fmt(r.inicio)}</span>
+            <span>{fmt(r.ida)}</span>
             <span>{fmt(r.inicioFolga)}</span>
-            <span>{fmt(r.proximo)}</span>
+            <span>{fmt(r.ultimoFolga)}</span>
           </div>
           <div className="facts" id="r-facts">
+            <div className="tr">
+              <b>{fmt(r.ida)}</b>
+              <span>Translado de ida</span>
+            </div>
+            <div>
+              <b>{fmt(r.inicio)}</b>
+              <span>Embarque</span>
+            </div>
             <div>
               <b>{fmt(r.ultimoBordo)}</b>
               <span>Último dia a bordo</span>
             </div>
+            <div className="tr">
+              <b>{fmt(r.volta)}</b>
+              <span>{r.volta > r.ultimoBordo ? "Translado de volta" : "Translado de volta (no último dia a bordo)"}</span>
+            </div>
             <div>
-              <b>{fmt(r.ultimoFolga)}</b>
-              <span>Último dia de folga</span>
+              <b>{fmt(r.inicioFolga) + " a " + fmt(r.ultimoFolga)}</b>
+              <span>Folga</span>
             </div>
             <div>
               <b>{fmt(r.proximo)}</b>
-              <span>Próximo embarque</span>
+              <span>{"Próximo embarque (translado em " + fmt(r.proximaIda) + ")"}</span>
             </div>
           </div>
         </div>
@@ -210,6 +265,8 @@ export function Historico({ oculto }: { oculto: boolean }) {
                 <th>Período</th>
                 <th>Dias a bordo</th>
                 <th>Dobra</th>
+                <th>Translado</th>
+                <th>Dias trabalhados</th>
                 <th>Dias de folga</th>
               </tr>
             </thead>
@@ -222,6 +279,10 @@ export function Historico({ oculto }: { oculto: boolean }) {
                   <td>{fmt(r.de) + " a " + fmt(r.ate)}</td>
                   <td>{r.ab}</td>
                   <td>{r.dob}</td>
+                  <td>{r.tr}</td>
+                  <td>
+                    <b>{r.ab + r.tr}</b>
+                  </td>
                   <td>{r.fo}</td>
                 </tr>
               ))}
@@ -240,7 +301,7 @@ export function Historico({ oculto }: { oculto: boolean }) {
         </button>
       </div>
       <p className="mute" style={{ marginTop: 10 }}>
-        Períodos “Registrados” vieram de embarques lançados no sistema; “Previstos” seguem a escala padrão e ainda não foram confirmados.
+        Dias trabalhados = dias a bordo + dias de translado. O translado não gera folga. Períodos “Registrados” vieram de embarques lançados no sistema; “Previstos” seguem a escala padrão (translado de ida no dia anterior ao embarque) e ainda não foram confirmados.
       </p>
     </section>
   );
@@ -271,6 +332,8 @@ export function EquipeHoje({ oculto }: { oculto: boolean }) {
                 <Chip k="vac">{"Férias até " + fmt(p.fFim as number)}</Chip>
               ) : c.st === "aboard" ? (
                 <Chip k="sea">{"A bordo · dia " + c.day + " de " + c.L + (c.dobra ? " · dobra +" + c.dobra : "")}</Chip>
+              ) : c.st === "transit" ? (
+                <Chip k="warn">{c.sentido === "ida" ? "Translado de ida · embarca em " + fmt(c.next) : "Translado de volta · folga a partir de " + fmt(c.e.folgaIni)}</Chip>
               ) : c.st === "rest" ? (
                 <Chip k="ok">{"Folga · dia " + c.day + " de " + c.L}</Chip>
               ) : (
@@ -284,7 +347,7 @@ export function EquipeHoje({ oculto }: { oculto: boolean }) {
                   </td>
                   <td>{chip}</td>
                   <td>
-                    <div className="bar">{c.st === "future" ? null : <i style={{ left: (c.pos / (2 * c.L)) * 100 + "%" }} />}</div>
+                    <div className="bar">{c.st === "future" ? null : <i style={{ left: (c.pos / c.tot) * 100 + "%" }} />}</div>
                   </td>
                   <td>
                     {fmt(c.next)}

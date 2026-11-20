@@ -1,7 +1,7 @@
 /** Conteúdo das exportações (histórico em Excel e PDF, ficha do colaborador em PDF), sem depender das bibliotecas. */
 import { fmt } from "./datas";
 import { campos, docFor, docsDo, nomeSetor, opcDoc, setor, VACS } from "./documentos";
-import { nomeBarco, type Calculo } from "./escala";
+import { etapasPeriodo, nomeBarco, type Calculo } from "./escala";
 import { unesc } from "./texto";
 import type { Estado, Pessoa } from "./tipos";
 import { estadoQualquer, isAso } from "./validade";
@@ -49,16 +49,18 @@ export type Celula = string | number;
 
 /** Abas da planilha: [nome da aba, linhas]. */
 export function planilhaHistorico(S: Pick<Estado, "boats">, R: Calculo[]): [string, Celula[][]][] {
-  const resumo: Celula[][] = ([["Colaborador", "Setor", "De", "Até", "Dias a bordo", "Dias de dobra (incluídos)", "Dias de folga"]] as Celula[][]).concat(
-    R.map((r) => [unesc(r.p.name), nomeSetor(r.p.setor), fmt(r.de), fmt(r.ate), r.ab, r.dob, r.fo]),
-  );
-  const pers: Celula[][] = [["Colaborador", "Barco", "Início do embarque", "Último dia a bordo", "Dias a bordo", "Dobra", "Início da folga", "Último dia de folga", "Origem"]];
+  const resumo: Celula[][] = (
+    [["Colaborador", "Setor", "De", "Até", "Dias a bordo", "Dias de dobra (incluídos)", "Dias de translado", "Dias trabalhados (a bordo + translado)", "Dias de folga"]] as Celula[][]
+  ).concat(R.map((r) => [unesc(r.p.name), nomeSetor(r.p.setor), fmt(r.de), fmt(r.ate), r.ab, r.dob, r.tr, r.ab + r.tr, r.fo]));
+  const pers: Celula[][] = [
+    ["Colaborador", "Barco", "Translado de ida", "Início do embarque", "Último dia a bordo", "Translado de volta", "Dias a bordo", "Dobra", "Início da folga", "Último dia de folga", "Origem"],
+  ];
   const dias: Celula[][] = [["Colaborador", "Data", "Situação", "Origem"]];
   R.forEach((r) => {
     const n = unesc(r.p.name);
     r.per.forEach((x) => {
-      const t = x.dias + x.dobra;
-      pers.push([n, unesc(nomeBarco(S, x.boat)), fmt(x.ini), fmt(x.ini + t - 1), t, x.dobra, fmt(x.ini + t), fmt(x.ini + 2 * t - 1), x.src]);
+      const e = etapasPeriodo(x);
+      pers.push([n, unesc(nomeBarco(S, x.boat)), fmt(e.ida), fmt(x.ini), fmt(e.ultimoBordo), fmt(e.volta), e.A, x.dobra, fmt(e.folgaIni), fmt(e.folgaFim), x.src]);
     });
     r.dias.forEach((d) => dias.push([n, fmt(d[0]), d[1], d[2]]));
   });
@@ -88,12 +90,16 @@ export function pdfHistorico(S: Pick<Estado, "boats">, R: Calculo[], T: number):
   let antes = 4;
   R.forEach((r) => {
     out.push({ t: unesc(r.p.name) + "  |  " + fmt(r.de) + " a " + fmt(r.ate), x: 14, sz: 11, b: true, antes });
-    out.push({ t: "Dias a bordo: " + r.ab + "   Dobra: " + r.dob + "   Dias de folga: " + r.fo, x: 14, sz: 10, b: false });
+    out.push({ t: "Dias a bordo: " + r.ab + "   Dobra: " + r.dob + "   Translado: " + r.tr + "   Trabalhados: " + (r.ab + r.tr) + "   Dias de folga: " + r.fo, x: 14, sz: 10, b: false });
     r.per.forEach((x) => {
-      const t = x.dias + x.dobra,
+      const e = etapasPeriodo(x),
         bn = nomeBarco(S, x.boat);
       out.push({
-        t: (bn ? unesc(bn) + ": " : "") + fmt(x.ini) + " a " + fmt(x.ini + t - 1) + " a bordo (" + t + " dias" + (x.dobra ? ", dobra " + x.dobra : "") + ")  |  folga " + fmt(x.ini + t) + " a " + fmt(x.ini + 2 * t - 1) + "  [" + x.src + "]",
+        t:
+          (bn ? unesc(bn) + ": " : "") +
+          "translado " + fmt(e.ida) + "  |  " + fmt(x.ini) + " a " + fmt(e.ultimoBordo) + " a bordo (" + e.A + " dias" + (x.dobra ? ", dobra " + x.dobra : "") + ")" +
+          (e.volta > e.ultimoBordo ? "  |  volta " + fmt(e.volta) : "") +
+          "  |  folga " + fmt(e.folgaIni) + " a " + fmt(e.folgaFim) + "  [" + x.src + "]",
         x: 18,
         sz: 9,
         b: false,

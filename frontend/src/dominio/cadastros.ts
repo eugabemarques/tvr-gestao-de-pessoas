@@ -1,6 +1,6 @@
 /** Validações e gravações dos cadastros (colaborador, barco, curso/ASO, avisos). */
 import { diaIso, toDay } from "./datas";
-import { barco, novoId, pessoa } from "./escala";
+import { barco, erroTranslado, novoId, pessoa, TI_PADRAO, TV_PADRAO } from "./escala";
 import { curCampo, setor, VACS, type LinhaCurso } from "./documentos";
 import { esc, unesc } from "./texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "./tipos";
@@ -33,6 +33,9 @@ export interface FormColab {
   barco: string;
   data: string;
   dias: string;
+  /** Datas do translado de ida e de volta ("" = padrão: dia anterior ao embarque / último dia a bordo). */
+  ida: string;
+  volta: string;
   fi: string;
   ff: string;
   vac: Record<ChaveVacina, string>;
@@ -71,6 +74,9 @@ export function formDe(S: Estado, p: Pessoa | null | undefined): FormColab {
     barco: p && barco(S, p.boat) ? String(p.boat) : "",
     data: p && p.embark != null ? diaIso(p.embark) : "",
     dias: String(p && p.dias ? p.dias : 42),
+    // só mostra a data quando é diferente do padrão
+    ida: p && p.embark != null && p.ti != null && p.ti !== TI_PADRAO ? diaIso(p.embark - p.ti) : "",
+    volta: p && p.embark != null && p.tv != null && p.tv !== TV_PADRAO ? diaIso(p.embark + (p.dias || 0) + (p.dobra || 0) - 1 + p.tv) : "",
     fi: p ? diaIso(p.fIni) : "",
     ff: p ? diaIso(p.fFim) : "",
     vac: { cov: "", dt: "", fa: "" },
@@ -82,6 +88,12 @@ export function formDe(S: Estado, p: Pessoa | null | undefined): FormColab {
   });
   return f;
 }
+
+/** Dias de translado de ida informados na ficha (padrão se a data estiver vazia). */
+const translIda = (f: FormColab): number => (f.data && f.ida ? toDay(f.data) - toDay(f.ida) : TI_PADRAO);
+/** Dias de translado de volta: data informada menos o último dia a bordo (com a dobra que continua valendo). */
+const translVolta = (f: FormColab, dobra: number): number =>
+  f.data && f.volta ? toDay(f.volta) - (toDay(f.data) + (parseInt(f.dias) || 0) + dobra - 1) : TV_PADRAO;
 
 export interface ErroForm {
   /** id do elemento a focar (como no protótipo: cnome, ccpf...). */
@@ -96,6 +108,8 @@ export interface ErroForm {
 export function validarColab(f: FormColab): ErroForm | null {
   const v = (x: string) => x.trim(),
     dg = (x: string) => v(x).replace(/\D/g, "");
+  const erroIda = f.data && f.ida ? erroTranslado(translIda(f), TV_PADRAO) : null,
+    erroVolta = f.data && f.volta ? erroTranslado(TI_PADRAO, translVolta(f, 0)) : null;
   const checks: [string, boolean, string][] = [
     ["cnome", !!v(f.nome), "Informe o nome completo."],
     ["ccpf", !dg(f.cpf) || dg(f.cpf).length === 11, "O CPF precisa ter 11 números (ou deixe em branco)."],
@@ -103,6 +117,8 @@ export function validarColab(f: FormColab): ErroForm | null {
     ["cemail", !v(f.email) || /^\S+@\S+\.\S+$/.test(v(f.email)), "Informe um e-mail válido (ou deixe em branco)."],
     ["ccel", !dg(f.cel) || dg(f.cel).length >= 10, "Informe o celular com DDD (ou deixe em branco)."],
     ["ccep", !dg(f.cep) || dg(f.cep).length === 8, "O CEP precisa ter 8 números (ou deixe em branco)."],
+    ["cida", !erroIda, erroIda || ""],
+    ["cvolta", !erroVolta, erroVolta || ""],
     ["cfi", !f.ff || !!f.fi, "Informe o início das férias."],
     ["cff", !f.fi || !!f.ff, "Informe o fim das férias."],
     ["cff", !f.fi || !f.ff || f.ff >= f.fi, "O fim das férias precisa ser depois do início."],
@@ -210,7 +226,22 @@ export function salvarColab(S: Estado, cedit: number | null, f: FormColab, docs:
     const nid = novoId(S.people, agora);
     p = { id: nid, ...d, dobra: 0, base: d.dias || 42 };
     S.people.push(p);
-    if (d.embark != null) (S.hist = S.hist || []).push({ pid: nid, ini: d.embark, dias: d.dias as number, dobra: 0, boat: d.boat });
+  }
+  // translado do embarque atual (a volta conta a partir do último dia a bordo, com a dobra que continua valendo)
+  if (hasEsc) {
+    p.ti = translIda(f);
+    p.tv = translVolta(f, p.dobra || 0);
+  } else {
+    delete p.ti;
+    delete p.tv;
+  }
+  if (d.embark != null) {
+    S.hist = S.hist || [];
+    const h = S.hist.find((x) => x.pid === p.id && x.ini === d.embark);
+    if (h) {
+      h.ti = p.ti;
+      h.tv = p.tv;
+    } else if (!cedit) S.hist.push({ pid: p.id, ini: d.embark, dias: d.dias as number, dobra: 0, boat: d.boat, ti: p.ti, tv: p.tv });
   }
   const pf = p.id;
   S.courses = S.courses.filter((c) => c.pid != pf).concat(ccur.filter((r) => r.valid != null).map((r) => ({ pid: pf, name: r.name, valid: r.valid as number })));

@@ -15,6 +15,24 @@ A escala de cada setor é um cadastro (hoje só existe a **42x42**, usada pelo A
 
 **Para mudar a regra**, o RH cria uma versão nova com a data em que ela passa a valer. Embarques que começaram antes continuam calculados pela versão antiga, então o histórico não muda.
 
+### Translado (em uso nas telas desde 20/11/2026)
+
+Cada ciclo do setor Ambiental tem quatro etapas: **translado de ida → a bordo → translado de volta → folga**.
+
+| Etapa | Padrão | Conta como | Gera folga? |
+|---|---|---|---|
+| Translado de ida | dia anterior ao embarque (o RH pode informar outra data) | dia trabalhado | não |
+| A bordo | dias da escala + dobra, a partir do embarque (dia 1) | dia trabalhado | sim, 1 por dia |
+| Translado de volta | no próprio último dia a bordo (sem dia extra); se for no dia seguinte, o RH informa a data | dia trabalhado | não |
+| Folga | começa no dia seguinte ao translado de volta | folga | — |
+
+- Próximo ciclo previsto: translado de ida no dia seguinte ao fim da folga, embarque no outro dia. Com o padrão, o ciclo 42x42 dura **85 dias** (1 + 42 + 42).
+- Exemplo: translado 16/11, embarque 17/11, último dia a bordo 28/12 (volta no mesmo dia), folga de 29/12 a 08/02, próximo translado 09/02 e embarque 10/02.
+- Dias trabalhados = dias a bordo + dias de translado. O histórico e as exportações mostram as duas contagens.
+- Embarques já registrados antes da mudança foram recalculados com o padrão (translado de ida no dia anterior, volta no último dia a bordo).
+- Ficam gravados como dias: `ti` (translado de ida, antes do embarque) e `tv` (translado de volta, depois do último dia a bordo); assim a dobra não desloca as datas por engano.
+- O calculador do back end (`Toveri.Dominio`) ainda **não** tem o translado: precisa ser atualizado antes de ser ligado às telas.
+
 ### Cálculo
 
 - O dia do embarque conta como o dia 1 a bordo.

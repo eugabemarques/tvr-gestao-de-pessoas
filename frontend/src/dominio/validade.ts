@@ -84,7 +84,7 @@ export function avisos(S: Estado, T: number): Aviso[] {
   return al.sort((a, b) => +b.bad - +a.bad);
 }
 
-export type ChavePainel = "emb" | "folga" | "equipe" | "cv" | "c60" | "c90" | "av" | "aa";
+export type ChavePainel = "emb" | "tr" | "folga" | "equipe" | "cv" | "c60" | "c90" | "av" | "aa";
 export interface ItemPessoa {
   p: Pessoa;
   c: Ciclo;
@@ -94,12 +94,15 @@ export interface ItemPessoa {
 export function gruposPainel(S: Estado, T: number) {
   const cy: ItemPessoa[] = S.people.filter((p) => p.embark != null).map((p) => ({ p, c: cycle(p, T) }));
   const ab = cy.filter((x) => x.c.st === "aboard" && !emFerias(x.p, T)),
-    rs = cy.filter((x) => x.c.st !== "aboard" && !emFerias(x.p, T));
+    tr = cy.filter((x) => x.c.st === "transit" && !emFerias(x.p, T)),
+    // translado é dia trabalhado: não conta como folga
+    rs = cy.filter((x) => (x.c.st === "rest" || x.c.st === "future") && !emFerias(x.p, T));
   const dd = (c: Curso) => c.valid - T;
   const C = S.courses.filter((c) => !isAso(c)),
     A = S.courses.filter(isAso);
-  const pessoas: Record<"emb" | "folga" | "equipe", [string, ItemPessoa[]]> = {
+  const pessoas: Record<"emb" | "tr" | "folga" | "equipe", [string, ItemPessoa[]]> = {
     emb: ["Embarcados hoje", ab],
+    tr: ["Em translado hoje", tr],
     folga: ["De folga hoje", rs],
     equipe: ["Equipe embarcada", ab],
   };

@@ -33,7 +33,7 @@ export function Painel({ oculto }: { oculto: boolean }) {
   let titulo = "Listagem",
     corpo: ReactNode = null;
   if (sel) {
-    if (sel === "emb" || sel === "folga" || sel === "equipe") {
+    if (sel === "emb" || sel === "tr" || sel === "folga" || sel === "equipe") {
       const [nome, itens] = pessoas[sel];
       titulo = nome + " (" + itens.length + ")";
       corpo = !itens.length ? (
@@ -56,7 +56,15 @@ export function Painel({ oculto }: { oculto: boolean }) {
                   <div className="mute">{unesc(x.p.role)}</div>
                 </td>
                 <td>{unesc(nomeBarco(S, x.p.boat)) || <span className="mute">—</span>}</td>
-                <td>{x.c.st === "aboard" ? <Chip k="sea">Embarcado</Chip> : <Chip k="ok">Folga</Chip>}</td>
+                <td>
+                  {x.c.st === "aboard" ? (
+                    <Chip k="sea">Embarcado</Chip>
+                  ) : x.c.st === "transit" ? (
+                    <Chip k="warn">{x.c.sentido === "ida" ? "Translado de ida" : "Translado de volta"}</Chip>
+                  ) : (
+                    <Chip k="ok">Folga</Chip>
+                  )}
+                </td>
                 <td>{fmt(x.c.next)}</td>
               </tr>
             ))}
@@ -102,8 +110,9 @@ export function Painel({ oculto }: { oculto: boolean }) {
 
   return (
     <>
-      <div className="cards r3" id="c1" hidden={oculto}>
+      <div className="cards r4" id="c1" hidden={oculto}>
         {card("emb", "Embarcados hoje", "")}
+        {card("tr", "Em translado hoje", "")}
         {card("folga", "De folga hoje", "")}
         <button type="button" className={"card" + (sel === "equipe" ? " on" : "")} data-sel="equipe" aria-pressed={sel === "equipe"} onClick={() => escolher("equipe")}>
           <span>Equipe embarcada</span>
