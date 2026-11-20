@@ -15,10 +15,9 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
   const [bsel, setBsel] = useState("");
   const [tocado, setTocado] = useState(false);
   const [data, setData] = useState(iso(AGORA));
-  const [dias, setDias] = useState("42");
-  // translado: null = padrão (ida no dia anterior ao embarque, volta no último dia a bordo)
+  // Translado de ida: null = padrão (dia anterior ao embarque). Os dias a bordo seguem a escala do colaborador e a
+  // volta fica no último dia a bordo; dias, dobra e volta diferentes se ajustam na ficha do colaborador (aba Embarques).
   const [ida, setIda] = useState<string | null>(null);
-  const [volta, setVolta] = useState<string | null>(null);
 
   const comEscala = S.people.filter((p) => p.embark != null);
   const pidEf = comEscala.some((p) => String(p.id) === pid) ? pid : comEscala.length ? String(comEscala[0].id) : "";
@@ -26,30 +25,26 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
   const barcoEf = tocado ? (bsel === "" || barco(S, +bsel) ? bsel : "") : pp && barco(S, pp.boat) ? String(pp.boat) : "";
 
   const d = toDay(data || iso(AGORA)),
-    n = Math.max(1, parseInt(dias) || 0),
-    ultimo = d + n - 1;
-  const idaEf = ida ?? diaIso(d - TI_PADRAO),
-    voltaEf = volta ?? diaIso(ultimo + TV_PADRAO);
+    n = pp?.base || 42;
+  const idaEf = ida ?? diaIso(d - TI_PADRAO);
   const ti = idaEf ? d - toDay(idaEf) : TI_PADRAO,
-    tv = voltaEf ? toDay(voltaEf) - ultimo : TV_PADRAO;
+    tv = TV_PADRAO;
   const erroTr = erroTranslado(ti, tv);
   const r = previaRegistro(d, n, erroTr ? TI_PADRAO : ti, erroTr ? TV_PADRAO : tv);
 
   const salvar = () => {
-    const p = pessoa(S, pidEf),
-      nd = parseInt(dias);
-    if (!p || !nd || nd < 1 || !data) {
-      toast("Informe colaborador, data e dias embarcados.");
+    const p = pessoa(S, pidEf);
+    if (!p || !data) {
+      toast("Informe colaborador e data de embarque.");
       return;
     }
     if (erroTr) {
       toast(erroTr);
       return;
     }
-    loja.mutar((E) => registrarEmbarque(E, p.id, toDay(data), nd, barcoEf ? +barcoEf : null, ti, tv));
+    loja.mutar((E) => registrarEmbarque(E, p.id, toDay(data), n, barcoEf ? +barcoEf : null, ti, tv));
     setTocado(false);
     setIda(null);
-    setVolta(null);
     toast("Registro salvo para " + unesc(p.name) + ".");
   };
 
@@ -101,16 +96,8 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
             Data de embarque
             <input type="date" id="data" value={data} onChange={(e) => setData(e.target.value)} />
           </label>
-          <label>
-            Dias embarcados
-            <input type="number" id="dias" min="1" max="120" value={dias} onChange={(e) => setDias(e.target.value)} />
-          </label>
-          <label>
-            Translado de volta
-            <input type="date" id="tvolta" value={voltaEf} onChange={(e) => setVolta(e.target.value)} />
-          </label>
           <p className="mute" style={{ margin: "-4px 0 10px", fontSize: 13 }}>
-            Padrão: ida no dia anterior ao embarque e volta no último dia a bordo. Se a volta for no dia seguinte, ajuste a data.
+            {"Padrão: translado de ida no dia anterior ao embarque e " + n + " dias a bordo (escala do colaborador). Outros ajustes: ficha do colaborador, aba Embarques."}
           </p>
           {erroTr ? (
             <p className="ferr" role="alert">
@@ -157,22 +144,6 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
             <div>
               <b>{fmt(r.inicio)}</b>
               <span>Embarque</span>
-            </div>
-            <div>
-              <b>{fmt(r.ultimoBordo)}</b>
-              <span>Último dia a bordo</span>
-            </div>
-            <div className="tr">
-              <b>{fmt(r.volta)}</b>
-              <span>{r.volta > r.ultimoBordo ? "Translado de volta" : "Translado de volta (no último dia a bordo)"}</span>
-            </div>
-            <div>
-              <b>{fmt(r.inicioFolga) + " a " + fmt(r.ultimoFolga)}</b>
-              <span>Folga</span>
-            </div>
-            <div>
-              <b>{fmt(r.proximo)}</b>
-              <span>{"Próximo embarque (translado em " + fmt(r.proximaIda) + ")"}</span>
             </div>
           </div>
         </div>

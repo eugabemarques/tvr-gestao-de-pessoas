@@ -37,7 +37,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
   - Cursos que vencem durante um embarque em curso ou previsto para os próximos 30 dias. Cada aviso pode ser marcado como **Resolvido** (e reaberto depois).
 
 **Embarques**
-- Registro de embarque: escolhe-se o colaborador, a data de embarque e os dias embarcados, e o sistema calcula a folga conquistada, o último dia a bordo e o próximo embarque.
+- Registro de embarque (tela Embarques): só colaborador, barco, translado de ida e data de embarque. Os dias a bordo seguem a escala do colaborador e a volta fica no último dia a bordo; a tela mostra a folga conquistada e as datas de translado e embarque. Dias, dobra e volta diferentes se ajustam na ficha do colaborador, aba Embarques.
 - Tabela "Equipe hoje" com a situação de cada pessoa e o ponto em que está no ciclo.
 - Botão **Dobra** para somar dias a um embarque em andamento.
 - Histórico por colaborador e período, com exportação para Excel e PDF.
