@@ -15,6 +15,7 @@ import {
   reqInfo,
   setor,
   syncReqCur,
+  VACDOC,
   VACS,
   type LinhaCurso,
   type SecaoFicha,
@@ -734,17 +735,24 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
 
           <section hidden={sec !== "vacinas"}>
             <h3 className="fh">Vacinas</h3>
-            <p className="mute fintro">Informe a data e anexe o comprovante de cada vacina. Com os três comprovantes, o item de vacinação dos documentos obrigatórios fica completo.</p>
-            <div className="fgrid">
-              {VACS.map(([k, nome]) => {
-                const id = { cov: "cvcov", dt: "cvdt", fa: "cvfa" }[k as ChaveVacina];
-                const rot = nome + (k === "fa" ? " · data da dose" : " · data da última dose");
-                return (
-                  <Campo key={k} ctx={ctx} id={id} rotulo={rot} w2 anexo={"Vacina: " + nome}>
-                    <input id={id} type="date" autoComplete="off" value={f.vac[k]} onChange={(e) => set("vac", { ...f.vac, [k]: e.target.value })} />
-                  </Campo>
-                );
-              })}
+            <p className="mute fintro">Informe a data de cada vacina e anexe um único arquivo com os três comprovantes (Covid-19, DT e febre amarela).</p>
+            <div className="fvacs">
+              <div className="fvacs-campos">
+                {VACS.map(([k, nome]) => {
+                  const id = { cov: "cvcov", dt: "cvdt", fa: "cvfa" }[k as ChaveVacina];
+                  const rot = nome + (k === "fa" ? " · data da dose" : " · data da última dose");
+                  return (
+                    <Campo key={k} ctx={ctx} id={id} rotulo={rot} w2>
+                      <input id={id} type="date" autoComplete="off" value={f.vac[k]} onChange={(e) => set("vac", { ...f.vac, [k]: e.target.value })} />
+                    </Campo>
+                  );
+                })}
+              </div>
+              <Clip ctx={ctx} anexo={VACDOC} rotulo="Comprovante de vacinação (as três vacinas)" />
+            </div>
+            <div className="fvacs-doc">
+              <RTag ctx={ctx} anexo={VACDOC} />
+              <FDoc ctx={ctx} campo={VACDOC} />
             </div>
           </section>
         </div>

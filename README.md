@@ -53,6 +53,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 **Colaboradores**
 - Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
 - Ficha dividida em seções: Dados pessoais, Cursos, Embarques e Vacinas. Pode ser salva incompleta (só o nome é obrigatório).
+- Vacinas: data de cada uma das três vacinas e **um único anexo** com os três comprovantes (fichas antigas com três arquivos separados continuam valendo).
 - **Pasta do colaborador:** todos os dados, documentos obrigatórios e anexos, com três downloads:
   - **Dossiê (PDF):** a ficha seguida de todos os documentos anexados num único arquivo, com índice das páginas. PDFs entram inteiros; imagens entram numa página A4 com o nome do documento (na orientação certa); um anexo que não abre vira uma página de aviso.
   - **Só a ficha (PDF):** logo da TOVERI, dados pessoais, cursos e exames com validade e vacinas (as listas de documentos ficam só no dossiê).

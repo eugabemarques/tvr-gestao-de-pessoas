@@ -32,6 +32,12 @@ describe("documentos obrigatórios por setor", () => {
     expect(docFor(vacinas, VACDOC)).toEqual({ name: "3 comprovantes na seção Vacinas", virt: true });
     expect(pendDocs({ setor: "administrativo", docs: vacinas })).not.toContain(VACDOC);
   });
+  it("vacinação completa com um único arquivo dos três comprovantes", () => {
+    const unico = [{ campo: VACDOC, name: "vacinas.pdf", fid: "x" }];
+    expect(docFor(unico, VACDOC)?.name).toBe("vacinas.pdf");
+    expect(pendDocs({ setor: "administrativo", docs: unico })).not.toContain(VACDOC);
+    expect(reqInfo("ambiental", unico).sec.vacinas).toBe(0);
+  });
   it("conta pendências por seção da ficha", () => {
     expect(reqInfo("ambiental", []).sec).toEqual({ dados: 8, cursos: 3, vacinas: 1 });
     expect(reqInfo("ambiental", [...vacinas, { campo: "CBSP", name: "c.pdf" }]).sec).toEqual({ dados: 8, cursos: 2, vacinas: 0 });

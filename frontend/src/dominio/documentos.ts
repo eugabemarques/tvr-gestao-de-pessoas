@@ -47,7 +47,7 @@ export const VACS: [ChaveVacina, string][] = [
   ["fa", "Febre amarela"],
 ];
 
-/** Documento anexado a um item; a vacinação conta como anexada com os três comprovantes. */
+/** Documento anexado a um item; a vacinação conta com o arquivo único da seção Vacinas ou (fichas antigas) com os três comprovantes separados. */
 export function docFor(docs: Documento[] | undefined, n: string): Documento | null | undefined {
   const d = (docs || []).find((x) => x.campo === n);
   if (d || n !== VACDOC) return d;

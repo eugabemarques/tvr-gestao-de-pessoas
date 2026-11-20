@@ -258,6 +258,13 @@ header h1,.vt,.panel>h2,.panel h2[id],.boat h3{color:var(--brand)}
 .fdoc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:5px;overflow-wrap:anywhere}
 .fdoc:empty{display:none}
 .fdoc .chip{font-size:11px;padding:1px 8px}
+.fvacs{display:flex;align-items:center;gap:10px}
+.fvacs-campos{flex:1;min-width:0}
+.fvacs .clip{width:44px;height:30px;border-radius:99px;background:var(--warnbg);color:var(--warn)}
+.fvacs .clip.on{background:color-mix(in srgb,var(--sea) 15%,transparent);color:var(--sea)}
+.fvacs-doc{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fvacs-doc .rtag{margin-left:0}
+.fvacs-doc .fdoc{margin-top:0}
 #cchk{margin-top:8px}
 .fother{margin-top:16px}
 .ffoot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 30px 18px;border-top:1px solid var(--line)}
