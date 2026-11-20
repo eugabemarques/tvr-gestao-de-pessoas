@@ -1,5 +1,5 @@
 /** Painel: cartões de resumo e listagem do cartão escolhido. */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Chip } from "../componentes/Comuns";
 import { fmt } from "../dominio/datas";
 import { nomeBarco, pessoa } from "../dominio/escala";
@@ -22,13 +22,26 @@ export function Painel({ oculto }: { oculto: boolean }) {
       lista.current.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth", block: "nearest" });
   }, [sel]);
 
-  const card = (k: ChavePainel, l: string, cls: string) => (
-    <button type="button" className={"card " + cls + (sel === k ? " on" : "")} data-sel={k} aria-pressed={sel === k} onClick={() => escolher(k)}>
+  const card = (k: ChavePainel, l: string, cls: string, style?: CSSProperties) => (
+    <button key={k} type="button" className={"card " + cls + (sel === k ? " on" : "")} style={style} data-sel={k} aria-pressed={sel === k} onClick={() => escolher(k)}>
       <span>{l}</span>
       <b>{qtd(k)}</b>
     </button>
   );
   const ab = pessoas.equipe[1];
+  // cartões de pendência: só aparecem os que têm alguma (o painel fica mais limpo)
+  const PENDENCIAS: [ChavePainel, string, string][] = [
+    ["cv", "Curso vencido", "bad"],
+    ["c60", "Vencem em 60 dias", "warn"],
+    ["c90", "Vencem em 90 dias", "warn"],
+    ["av", "ASOs vencidos", "bad"],
+    ["aa", "ASOs a vencer", "warn"],
+    ["nv", "Norueguês vencido", "bad"],
+    ["na", "Norueguês a vencer", "warn"],
+  ];
+  const pendentes = PENDENCIAS.filter(([k]) => qtd(k) > 0);
+  // o cartão aberto zerou (ex.: curso renovado): fecha a lista
+  if (sel && PENDENCIAS.some(([k]) => k === sel) && qtd(sel) === 0) setSel(null);
 
   let titulo = "Listagem",
     corpo: ReactNode = null;
@@ -124,17 +137,18 @@ export function Painel({ oculto }: { oculto: boolean }) {
           </span>
         </button>
       </div>
-      <div className="cards" id="c2" hidden={oculto}>
-        {card("cv", "Curso vencido", "bad")}
-        {card("c60", "Vencem em 60 dias", "warn")}
-        {card("c90", "Vencem em 90 dias", "warn")}
-        {card("av", "ASOs vencidos", "bad")}
-        {card("aa", "ASOs a vencer", "warn")}
-      </div>
-      <div className="cards r2" id="c3" hidden={oculto}>
-        {card("nv", "Norueguês vencido", "bad")}
-        {card("na", "Norueguês a vencer", "warn")}
-      </div>
+      {pendentes.length ? (
+        <div className="cards" id="c2" hidden={oculto}>
+          {/* alinhados à direita, como a fileira de cima (grade de 5 colunas) */}
+          {pendentes.map(([k, l, cls], i) =>
+            i === 0 && pendentes.length < 5 ? card(k, l, cls + " ini", { "--ini": 6 - pendentes.length } as CSSProperties) : card(k, l, cls),
+          )}
+        </div>
+      ) : (
+        <p className="mute tudoemdia" id="c2" hidden={oculto}>
+          Nenhum curso, ASO ou Norueguês vencido ou vencendo nos próximos 90 dias.
+        </p>
+      )}
       <section ref={lista} className={"panel" + (sel ? "" : " off")} id="plst" aria-labelledby="lt" hidden={oculto}>
         <div className="lhead">
           <h2 id="lt">{titulo}</h2>

@@ -30,7 +30,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 ## O que o sistema faz
 
 **Painel**
-- Resumo: embarcados hoje, de folga hoje, cursos vencidos e cursos que vencem em até 90 dias.
+- Resumo: embarcados hoje, em translado hoje, de folga hoje e equipe embarcada (sempre visíveis), e cartões de pendência de cursos, ASO e Norueguês, que **só aparecem quando há alguma** (sem pendências, uma linha avisa que está tudo em dia).
 - Gráfico de cursos por situação (vencidos, vencem em até 90 dias, em dia). Clicar numa coluna expande a lista de cursos daquela situação.
 - Ícone de sino com os avisos:
   - **Cadastros incompletos**: colaboradores com informações faltando, com o que falta e o botão "Abrir ficha". Some sozinho quando o cadastro é completado.
