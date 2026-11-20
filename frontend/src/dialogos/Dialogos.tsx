@@ -448,6 +448,15 @@ function CorpoPasta({ id, aoFechar }: Fechar & { id: number }) {
   const docs = p.docs || [];
   const baixarDoc = (f: Documento) =>
     blobDoc(f).then((b) => (b ? baixar(f.name, b, () => toast("Não foi possível baixar o arquivo.")) : toast("Arquivo não encontrado neste navegador.")));
+  const baixarPdf = async () => {
+    try {
+      const { gerarFichaPdf } = await import("./fichaPdf");
+      baixar(nomeArquivoFicha(p.name).replace(/\.txt$/, ".pdf"), await gerarFichaPdf(S, p, T), () => toast("Não foi possível baixar o arquivo."));
+    } catch (e) {
+      console.warn("Ficha em PDF", e);
+      toast("Não foi possível gerar o PDF. Tente de novo.");
+    }
+  };
   return (
     <>
       <h2 id="t-pa">{"Pasta de " + unesc(p.name)}</h2>
@@ -490,7 +499,10 @@ function CorpoPasta({ id, aoFechar }: Fechar & { id: number }) {
         )}
       </div>
       <div className="row" style={{ marginTop: 14 }}>
-        <button type="button" id="pficha" onClick={() => baixar(nomeArquivoFicha(p.name), fichaTexto(S, p), () => toast("Não foi possível baixar o arquivo."))}>
+        <button type="button" id="pfichapdf" onClick={() => void baixarPdf()}>
+          Baixar ficha (PDF)
+        </button>
+        <button type="button" className="ghost" id="pficha" onClick={() => baixar(nomeArquivoFicha(p.name), fichaTexto(S, p), () => toast("Não foi possível baixar o arquivo."))}>
           Baixar ficha (.txt)
         </button>
         <button className="ghost" type="button" id="pfechar" onClick={aoFechar}>

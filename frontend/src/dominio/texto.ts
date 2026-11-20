@@ -25,4 +25,4 @@ export const iniciais = (nome: string): string => {
 
 /** Nome de arquivo da ficha: ficha_<nome>.txt. */
 export const nomeArquivoFicha = (nome: string): string =>
-  "ficha_" + unesc(nome).normalize("NFD").replace(/[^\w]+/g, "_") + ".txt";
+  "ficha_" + unesc(nome).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "_").replace(/^_+|_+$/g, "") + ".txt";

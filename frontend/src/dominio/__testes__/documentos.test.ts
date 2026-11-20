@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { toDay } from "../datas";
 import { campoObrigatorio, campos, curCampo, docFor, docsDo, erroArq, fichaTexto, pendDocs, reqCursos, reqInfo, syncReqCur, VACDOC } from "../documentos";
+import { fichaPdf } from "../exportacao";
 import { esc, iniciais, nomeArquivoFicha, unesc } from "../texto";
 import type { Pessoa } from "../tipos";
 
@@ -79,6 +80,23 @@ describe("ficha e textos", () => {
     expect(c["Endereço"]).toBe("Rua A, 10 - Macaé - CEP 27900000");
     expect(c["Escala"]).toBe("42 dias a bordo e 42 de folga");
   });
+  it("ficha em PDF: dados, cursos, vacinas e documentos", () => {
+    const S = { boats: [{ id: 1, name: "Netuno" }], courses: [{ pid: 1, name: "CBSP", valid: T + 30 }, { pid: 1, name: "ASO", valid: T - 2 }, { pid: 2, name: "CBSP", valid: T }] };
+    const F = fichaPdf(S, { ...p, vac: { cov: T - 100 }, docs: [{ campo: "CBSP", name: "cbsp.pdf" }] }, T);
+    expect(F.nome).toBe("Ana & Cia");
+    expect(F.sub).toBe("Ambiental · Técnica");
+    const sec = Object.fromEntries(F.secoes.map((s) => [s.titulo, s.linhas]));
+    expect(sec["Dados pessoais"]).toContainEqual(["RG", "—"]);
+    expect(sec["Cursos e ASO"]).toEqual([
+      ["ASO", "Validade 11/11/2026 (vencido há 2 dias)"],
+      ["CBSP", "Validade 13/12/2026 (vence em 30 dias)"],
+    ]);
+    expect(sec["Vacinas"][0]).toEqual(["Covid-19", "05/08/2026"]);
+    expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["CBSP", "Anexado"]);
+    expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["Certificado PAM", "Opcional"]);
+    expect(sec["Documentos obrigatórios do setor"]).toContainEqual(["Work Citation", "Pendente"]);
+    expect(sec["Documentos anexados"]).toEqual([["CBSP", "cbsp.pdf"]]);
+  });
   it("Ficha.txt sem escape HTML e com travessão nos vazios", () => {
     const t = fichaTexto({ boats: [] }, p);
     expect(t.split("\n")[0]).toBe("Nome completo: Ana & Cia");
@@ -90,6 +108,7 @@ describe("ficha e textos", () => {
     expect(iniciais("  Ana   Maria Ribeiro ")).toBe("AR");
     expect(iniciais("")).toBe("");
     expect(nomeArquivoFicha("José da Silva")).toBe("ficha_Jose_da_Silva.txt");
+    expect(nomeArquivoFicha("Ana Fictícia Conceição")).toBe("ficha_Ana_Ficticia_Conceicao.txt");
   });
   it("mensagens de erro de anexo", () => {
     expect(erroArq("a.pdf", new Error("grande"))).toBe("“a.pdf” passa de 20 MB e não foi anexado.");
