@@ -47,6 +47,11 @@ export const VACS: [ChaveVacina, string][] = [
   ["fa", "Febre amarela"],
 ];
 
+/** Fichas internas da TOVERI (aba "Docs Toveri"): só anexo, sem campos; por ora não são cobradas como obrigatórias. */
+export const DOCS_TOVERI: string[] = ["Dados Pessoais", "Contato de Emergência", "Dados Bancários", "Autodeclaração de Raça", "Política de Drogas e Álcool"];
+/** Campo de anexo de uma ficha da TOVERI (prefixado para não se confundir com os documentos do colaborador). */
+export const campoToveri = (n: string): string => "Docs Toveri: " + n;
+
 /** Documento anexado a um item; a vacinação conta com o arquivo único da seção Vacinas ou (fichas antigas) com os três comprovantes separados. */
 export function docFor(docs: Documento[] | undefined, n: string): Documento | null | undefined {
   const d = (docs || []).find((x) => x.campo === n);

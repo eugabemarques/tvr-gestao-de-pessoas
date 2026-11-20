@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toDay } from "../datas";
-import { campoObrigatorio, campos, curCampo, docFor, docsDo, erroArq, fichaTexto, pendDocs, reqCursos, reqInfo, syncReqCur, VACDOC } from "../documentos";
+import { campoObrigatorio, campos, campoToveri, curCampo, docFor, DOCS_TOVERI, docsDo, erroArq, fichaTexto, pendDocs, reqCursos, reqInfo, syncReqCur, VACDOC } from "../documentos";
 import { fichaPdf } from "../exportacao";
 import { esc, iniciais, nomeArquivoFicha, unesc } from "../texto";
 import type { Pessoa } from "../tipos";
@@ -31,6 +31,12 @@ describe("documentos obrigatórios por setor", () => {
     expect(docFor(vacinas.slice(0, 2), VACDOC)).toBeNull();
     expect(docFor(vacinas, VACDOC)).toEqual({ name: "3 comprovantes na seção Vacinas", virt: true });
     expect(pendDocs({ setor: "administrativo", docs: vacinas })).not.toContain(VACDOC);
+  });
+  it("Docs Toveri: cinco fichas só de anexo, fora das pendências obrigatórias", () => {
+    expect(DOCS_TOVERI.length).toBe(5);
+    const list = reqInfo("ambiental", []).list;
+    DOCS_TOVERI.forEach((n) => expect(campoObrigatorio(list, campoToveri(n))).toBe(false));
+    expect(pendDocs({ setor: "ambiental", docs: [] }).some((n) => n.startsWith("Docs Toveri"))).toBe(false);
   });
   it("vacinação completa com um único arquivo dos três comprovantes", () => {
     const unico = [{ campo: VACDOC, name: "vacinas.pdf", fid: "x" }];

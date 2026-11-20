@@ -1,14 +1,16 @@
-/** Ficha do colaborador: dados pessoais, cursos e ASO, embarques e vacinas, com anexos por campo. */
+/** Ficha do colaborador: dados pessoais, cursos e ASO, embarques, vacinas e fichas internas (Docs Toveri), com anexos por campo. */
 import { useRef, useState, type ReactNode } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
-import { IcAncora, IcClipe, IcDados, IcFechar, IcLivro, IcOk, IcPessoa, IcVacina } from "../componentes/Icones";
+import { IcAncora, IcClipe, IcDados, IcFechar, IcLivro, IcOk, IcPasta, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
 import { diaIso, fmt, toDay } from "../dominio/datas";
 import { extrairDoDocumento, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
 import {
   ACEITOS,
   campoObrigatorio,
+  campoToveri,
   CURSOS,
+  DOCS_TOVERI,
   curCampo,
   docsDo,
   erroArq,
@@ -27,7 +29,7 @@ import { ANOS_NORUEGUES, courseState, isExame, NORUEGUES, stAso, validadeNoruegu
 import { loja, T, toast, useEstado } from "../loja";
 import { guardar } from "../servidor/api";
 
-type Secao = SecaoFicha | "embarques";
+type Secao = SecaoFicha | "embarques" | "toveri";
 
 /** Campos validados que ficam na seção Embarques. */
 const DA_SECAO_EMBARQUES = new Set(["cida", "cdata", "cdias", "cvolta", "cfi", "cff"]);
@@ -406,7 +408,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     <button type="button" aria-current={sec === k ? "true" : undefined} onClick={() => irPara(k)}>
       {icone}
       {rotulo}
-      {k !== "embarques" ? nb(k) : null}
+      {k !== "embarques" && k !== "toveri" ? nb(k) : null}
     </button>
   );
   const outros = docs.map((d, i) => ({ d, i })).filter((x) => !x.d.campo);
@@ -426,6 +428,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
           {navBtn("cursos", <IcLivro />, "Cursos")}
           {navBtn("embarques", <IcAncora />, "Embarques")}
           {navBtn("vacinas", <IcVacina />, "Vacinas")}
+          {navBtn("toveri", <IcPasta />, "Docs Toveri")}
         </nav>
         <button className="ghost" id="cremover" type="button" hidden={!cedit} onClick={remover}>
           {confirmar ? "Confirmar remoção" : "Remover colaborador"}
@@ -756,6 +759,27 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
             <div className="fvacs-doc">
               <RTag ctx={ctx} anexo={VACDOC} />
               <FDoc ctx={ctx} campo={VACDOC} />
+            </div>
+          </section>
+
+          <section hidden={sec !== "toveri"}>
+            <h3 className="fh">Documentos Toveri</h3>
+            <p className="mute fintro">Fichas internas da TOVERI. Não há campos para preencher: basta anexar cada ficha assinada.</p>
+            <div className="ftoveri">
+              {DOCS_TOVERI.map((n) => {
+                const campo = campoToveri(n);
+                return (
+                  <div className="ff w2" key={n}>
+                    <div className="fin">
+                      <button type="button" className="ftnome" onClick={() => ctx.anexar(campo)}>
+                        {n}
+                      </button>
+                      <Clip ctx={ctx} anexo={campo} rotulo={n} />
+                    </div>
+                    <FDoc ctx={ctx} campo={campo} />
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>

@@ -95,6 +95,11 @@ export const IcVacina = () => (
     <path d="M18 2l4 4M17 7l3-3M19 9 8.7 19.3a2.4 2.4 0 0 1-3.4 0l-.6-.6a2.4 2.4 0 0 1 0-3.4L15 5M9 11l4 4M5 19l-3 3M14 4l6 6" />
   </Svg>
 );
+export const IcPasta = () => (
+  <Svg>
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </Svg>
+);
 export const IcFechar = () => (
   <Svg>
     <path d="M18 6 6 18M6 6l12 12" />
