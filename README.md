@@ -13,7 +13,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 | Login | "Entrar com Microsoft" (Entra ID, só contas da TOVERI) + lista de e-mails liberados |
 | Dados | Compartilhados entre todos os usuários (SQLite no App Service), com auditoria de alterações e de arquivos abertos |
 | Documentos | Anexos de até 20 MB (PDF ou imagem), com cópia automática para a pasta do RH no SharePoint |
-| Regras de escala | Escala 42x42 com translado de ida e de volta nas telas; regras de compensação e vigência no back end, ainda não ligadas às telas (ver abaixo) |
+| Regras de escala | Escala 42x42 com translado de ida e de volta nas telas e no back end; compensação de folga e vigência só no back end, ainda não ligadas às telas (ver abaixo) |
 | Testes | Back end (xUnit) e telas (Vitest); os do back end rodam no GitHub a cada envio |
 
 ## Estrutura do repositório
@@ -97,7 +97,7 @@ Compila e testa telas e back end e envia para o App Service. Requer Node.js, .NE
 ## Próximos passos
 
 - **Banco de dados:** trocar o SQLite atual pelo Azure SQL Database (o modelo com Entity Framework já está no back end).
-- **Regras do RH nas telas:** usar as regras do back end (compensação, Aguardando, ASO após admissão) e permitir que o RH as ajuste, com data de início de vigência. Antes disso, levar o **translado** (hoje só nas telas) para o calculador do back end.
+- **Regras do RH nas telas:** usar as regras do back end (compensação, Aguardando, ASO após admissão) e permitir que o RH as ajuste, com data de início de vigência. O translado já está no calculador do back end, com o mesmo resultado das telas.
 - **Infraestrutura como código:** recursos do Azure descritos em Bicep, com Key Vault e Application Insights.
 - **Avisos de vencimento por e-mail:** tarefa diária no Azure Functions.
 - **LGPD:** ASO e vacinação tratados como dados sensíveis.

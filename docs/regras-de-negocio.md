@@ -12,10 +12,12 @@ A escala de cada setor é um cadastro (hoje só existe a **42x42**, usada pelo A
 | Dias embarcado | 42 | Duração de um embarque padrão |
 | Dias de folga | 42 | Folga de um embarque padrão |
 | Folga por dia de dobra | 1 | Dias de folga gerados por cada dia de dobra |
+| Dias de translado de ida | 1 | Padrão de dias de viagem antes do embarque (trabalhados, sem folga) |
+| Dias de translado de volta | 0 | Padrão de dias de viagem depois do último dia a bordo (0 = volta no último dia a bordo) |
 
 **Para mudar a regra**, o RH cria uma versão nova com a data em que ela passa a valer. Embarques que começaram antes continuam calculados pela versão antiga, então o histórico não muda.
 
-### Translado (em uso nas telas desde 20/11/2026)
+### Translado (nas telas e no back end desde 20/11/2026)
 
 Cada ciclo do setor Ambiental tem quatro etapas: **translado de ida → a bordo → translado de volta → folga**.
 
@@ -30,8 +32,11 @@ Cada ciclo do setor Ambiental tem quatro etapas: **translado de ida → a bordo 
 - Exemplo: translado 16/11, embarque 17/11, último dia a bordo 28/12 (volta no mesmo dia), folga de 29/12 a 08/02, próximo translado 09/02 e embarque 10/02.
 - Dias trabalhados = dias a bordo + dias de translado. O histórico e as exportações mostram as duas contagens.
 - Embarques já registrados antes da mudança foram recalculados com o padrão (translado de ida no dia anterior, volta no último dia a bordo).
-- Ficam gravados como dias: `ti` (translado de ida, antes do embarque) e `tv` (translado de volta, depois do último dia a bordo); assim a dobra não desloca as datas por engano.
-- O calculador do back end (`Toveri.Dominio`) ainda **não** tem o translado: precisa ser atualizado antes de ser ligado às telas.
+- Ficam gravados como dias: translado de ida (antes do embarque) e de volta (depois do último dia a bordo); assim a dobra não desloca as datas por engano. Nas telas, `ti`/`tv`; no back end, `Embarque.DiasTransladoIda`/`DiasTransladoVolta`.
+- **O padrão faz parte da versão da regra** (`DiasTransladoIda` = 1, `DiasTransladoVolta` = 0, de 0 a 10 dias). Embarque sem translado informado usa o padrão da versão vigente; mudar o padrão com uma versão nova não altera o histórico.
+- Convocação antecipada: o translado de ida do ciclo seguinte também é dia trabalhado, então entra nos dias de folga **não gozados**. Ex.: folga até 25/03, translado em 15/03 e embarque em 16/03 → 11 dias não gozados.
+- O translado de ida de um embarque registrado não pode cair sobre os dias trabalhados do anterior (a bordo ou translado de volta): o cálculo é recusado.
+- Compensação de folga começa no dia em que o próximo ciclo começaria, ou seja, no **translado de ida** previsto (ou num dia "Aguardando"), e não pode cobrir o translado nem o embarque de um ciclo registrado.
 
 ### Cálculo
 
@@ -62,8 +67,10 @@ A folga não gozada é compensada mais à frente, conforme o cronograma do proje
 | Situação | Quando |
 |---|---|
 | Sem escala | Nenhum embarque registrado |
-| Aguardando primeiro embarque | O primeiro embarque ainda não começou |
+| Aguardando primeiro embarque | O primeiro ciclo (translado de ida) ainda não começou |
+| Translado de ida | Viajando para o embarque (dia trabalhado, sem folga) |
 | Embarcado | A bordo, incluindo dias de dobra |
+| Translado de volta | Voltando do embarque depois do último dia a bordo (dia trabalhado, sem folga) |
 | Folga | Folga do embarque |
 | Folga compensatória | Compensando folga não gozada |
 | Aguardando | Folga terminou e o próximo embarque registrado começa depois do previsto |

@@ -8,7 +8,14 @@ public enum TipoSituacao
     /// <summary>O primeiro embarque ainda não começou.</summary>
     AguardandoPrimeiroEmbarque,
 
+    /// <summary>Viajando para o embarque (dia trabalhado, sem folga).</summary>
+    TransladoIda,
+
     Embarcado,
+
+    /// <summary>Voltando do embarque (dia trabalhado, sem folga).</summary>
+    TransladoVolta,
+
     Folga,
 
     /// <summary>Compensando folga não gozada de embarques anteriores.</summary>
@@ -19,8 +26,8 @@ public enum TipoSituacao
 }
 
 /// <summary>Onde o colaborador está na escala numa data.</summary>
-/// <param name="DiaDaFase">Dia a bordo ou dia de folga (o primeiro dia é 1).</param>
-/// <param name="DiasDaFase">Total de dias a bordo ou de folga do período.</param>
+/// <param name="DiaDaFase">Dia de translado, a bordo ou de folga (o primeiro dia é 1).</param>
+/// <param name="DiasDaFase">Total de dias de translado, a bordo ou de folga do período.</param>
 public sealed record SituacaoEscala(
     TipoSituacao Tipo,
     PeriodoEscala? Periodo,

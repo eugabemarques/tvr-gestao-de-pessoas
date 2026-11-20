@@ -35,6 +35,21 @@ public class VersaoRegraEscala
     /// <summary>Dias de folga gerados por dia de dobra (1 = um dia de folga por dia de dobra).</summary>
     public decimal FolgaPorDiaDeDobra { get; set; } = 1m;
 
+    public const int TransladoIdaPadrao = 1;
+    public const int TransladoVoltaPadrao = 0;
+
+    /// <summary>
+    /// Dias de translado de ida antes do embarque, quando o embarque não informa (1 = o dia anterior).
+    /// Translado é dia trabalhado e não gera folga.
+    /// </summary>
+    public int DiasTransladoIda { get; set; } = TransladoIdaPadrao;
+
+    /// <summary>
+    /// Dias de translado de volta depois do último dia a bordo, quando o embarque não informa
+    /// (0 = volta no próprio último dia a bordo).
+    /// </summary>
+    public int DiasTransladoVolta { get; set; } = TransladoVoltaPadrao;
+
     /// <summary>
     /// Folga conquistada por um embarque. Os dias embarcados geram folga na proporção da escala
     /// (DiasFolga / DiasEmbarcado) e os dias de dobra, na proporção FolgaPorDiaDeDobra.
@@ -59,5 +74,7 @@ public class VersaoRegraEscala
         if (DiasEmbarcado < 1) yield return "Informe pelo menos 1 dia embarcado.";
         if (DiasFolga < 0) yield return "Os dias de folga não podem ser negativos.";
         if (FolgaPorDiaDeDobra < 0) yield return "A folga por dia de dobra não pode ser negativa.";
+        if (DiasTransladoIda is < 0 or > 10) yield return "O translado de ida precisa ter de 0 a 10 dias.";
+        if (DiasTransladoVolta is < 0 or > 10) yield return "O translado de volta precisa ter de 0 a 10 dias.";
     }
 }

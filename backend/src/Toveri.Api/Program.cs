@@ -71,13 +71,24 @@ app.MapPost("/api/escala/simular", (SimulacaoEmbarque s) =>
 
     try
     {
-        var embarque = new Embarque { Inicio = s.Inicio, DiasEmbarcado = s.DiasEmbarcado, DiasDobra = s.DiasDobra };
+        var embarque = new Embarque
+        {
+            Inicio = s.Inicio,
+            DiasEmbarcado = s.DiasEmbarcado,
+            DiasDobra = s.DiasDobra,
+            DiasTransladoIda = s.DiasTransladoIda,
+            DiasTransladoVolta = s.DiasTransladoVolta,
+        };
         var p = CalculadoraEscala.Projetar(regra, [embarque], s.Inicio).Single();
         return Results.Ok(new
         {
+            p.InicioDoCiclo,
             p.Inicio,
             p.DiasABordo,
             p.UltimoDiaABordo,
+            p.UltimoDiaTrabalhado,
+            p.DiasTranslado,
+            p.DiasTrabalhados,
             p.DiasFolga,
             p.PrimeiroDiaDeFolga,
             p.UltimoDiaDeFolga,
@@ -114,4 +125,6 @@ public sealed record SimulacaoEmbarque(
     int DiasDobra = 0,
     int DiasEscalaEmbarcado = 42,
     int DiasEscalaFolga = 42,
-    decimal FolgaPorDiaDeDobra = 1m);
+    decimal FolgaPorDiaDeDobra = 1m,
+    int? DiasTransladoIda = null,
+    int? DiasTransladoVolta = null);

@@ -15,4 +15,16 @@ public class Embarque
 
     /// <summary>Dias extras a bordo (dobra), somados ao fim do embarque.</summary>
     public int DiasDobra { get; set; }
+
+    /// <summary>
+    /// Dias de translado de ida antes do embarque (1 = o dia anterior). Vazio: o padrão da regra.
+    /// Dia trabalhado que não gera folga.
+    /// </summary>
+    public int? DiasTransladoIda { get; set; }
+
+    /// <summary>
+    /// Dias de translado de volta depois do último dia a bordo (0 = volta no próprio último dia).
+    /// Vazio: o padrão da regra. Dia trabalhado que não gera folga.
+    /// </summary>
+    public int? DiasTransladoVolta { get; set; }
 }

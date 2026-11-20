@@ -25,13 +25,15 @@ Os testes também rodam no GitHub a cada envio (`.github/workflows/backend.yml`)
 | Rota | O que faz |
 |---|---|
 | `GET /api/saude` | Confere se a API está no ar |
-| `POST /api/escala/simular` | Calcula folga e próximo embarque, como a tela "Registrar embarque" |
+| `POST /api/escala/simular` | Calcula translado, folga e próximo embarque, como a tela "Registrar embarque" |
 
-Exemplo de `POST /api/escala/simular`:
+Exemplo de `POST /api/escala/simular` (translado opcional: sem ele, ida no dia anterior e volta no último dia a bordo):
 
 ```json
-{ "inicio": "2026-01-01", "diasEmbarcado": 42, "diasDobra": 7 }
+{ "inicio": "2026-11-17", "diasEmbarcado": 42, "diasDobra": 0, "diasTransladoIda": 1, "diasTransladoVolta": 1 }
 ```
+
+Responde com `inicioDoCiclo` (translado de ida), `ultimoDiaABordo`, `ultimoDiaTrabalhado` (com o translado de volta), `diasTranslado`, `diasTrabalhados`, folga e `proximoEmbarque`.
 
 ## Banco de dados
 
