@@ -7,7 +7,7 @@ import { diaIso, fmt, toDay } from "../dominio/datas";
 import { ACEITOS, campos, CURSOS, docFor, docsDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
 import { adicionarDobra, barco, cycle, pessoa, previaDobra } from "../dominio/escala";
 import { nomeArquivoFicha, unesc } from "../dominio/texto";
-import { avisos, isAso } from "../dominio/validade";
+import { ANOS_NORUEGUES, avisos, isAso, isNoruegues, NORUEGUES, validadeNoruegues } from "../dominio/validade";
 import type { Documento } from "../dominio/tipos";
 import { loja, T, toast, useEstado } from "../loja";
 import { baixar, blobDoc, guardar, URL_LOGOUT, type Usuario } from "../servidor/api";
@@ -311,28 +311,32 @@ export function BarcoDialogo({ aberto, id, aoFechar }: Fechar & { aberto: boolea
 
 /* ---------------- curso / ASO ---------------- */
 
-function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; tipo: "c" | "a" }) {
+function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; tipo: "c" | "a" | "n" }) {
   const S = useEstado();
   const [c] = useState(() => (chave == null ? null : S.courses.find((x) => x.pid + "|" + x.name === chave) || null));
   const aso = c ? isAso(c) : tipo === "a";
+  const nor = c ? isNoruegues(c) : tipo === "n";
+  // exames (ASO e Norueguês) têm o nome fixo; cursos são escolhidos na lista
+  const exame = aso || nor;
   const [pid, setPid] = useState(c ? String(c.pid) : S.people.length ? String(S.people[0].id) : "");
-  const [curn] = useState(c ? c.name : aso ? "ASO" : "");
-  const [curs, setCurs] = useState(c && !aso ? c.name : "");
+  const [curn] = useState(c ? c.name : aso ? "ASO" : nor ? NORUEGUES : "");
+  const [curs, setCurs] = useState(c && !exame ? c.name : "");
   const [validade, setValidade] = useState(c ? diaIso(c.valid) : "");
+  const [dataExame, setDataExame] = useState(c && c.exame != null ? diaIso(c.exame) : "");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [err, setErr] = useState("");
   const [confirmar, setConfirmar] = useState(false);
 
   const opcoes = CURSOS.slice();
-  if (c && !aso && !CURSOS.some((x) => x[0] === c.name)) opcoes.push([c.name, c.name + " (nome antigo)"]);
+  if (c && !exame && !CURSOS.some((x) => x[0] === c.name)) opcoes.push([c.name, c.name + " (nome antigo)"]);
 
   const salvar = async () => {
-    const nome = aso ? curn.trim() : curs,
+    const nome = exame ? curn.trim() : curs,
       p = +pid;
     const e = validarCurso(S, !c, aso, nome, p, validade);
     if (e) {
       setErr(e);
-      if (!nome) document.getElementById(aso ? "curn" : "curs")?.focus();
+      if (!nome) document.getElementById(exame ? "curn" : "curs")?.focus();
       return;
     }
     if (!c && !pessoa(S, p)) {
@@ -348,7 +352,7 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
         return;
       }
     }
-    loja.mutar((E) => salvarCurso(E, chave, c ? c.pid : p, nome, toDay(validade), doc));
+    loja.mutar((E) => salvarCurso(E, chave, c ? c.pid : p, nome, toDay(validade), doc, nor && dataExame ? toDay(dataExame) : null));
     aoFechar();
     toast(c ? "Atualizado." : "Adicionado.");
   };
@@ -364,7 +368,7 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
 
   return (
     <>
-      <h2 id="t-cr">{(c ? "Editar " : "Novo ") + (aso ? "ASO" : "curso")}</h2>
+      <h2 id="t-cr">{(c ? "Editar " : "Novo ") + (aso ? "ASO" : nor ? "Norueguês" : "curso")}</h2>
       <label>
         Colaborador
         <select id="curp" value={pid} disabled={!!c} onChange={(e) => setPid(e.target.value)}>
@@ -375,11 +379,28 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
           ))}
         </select>
       </label>
-      <label id="curnl" hidden={!aso}>
+      <label id="curnl" hidden={!exame}>
         Nome
         <input id="curn" autoComplete="off" value={curn} readOnly />
       </label>
-      <label id="cursl" hidden={aso}>
+      {nor ? (
+        <label>
+          Data do exame
+          <input
+            type="date"
+            id="curx"
+            value={dataExame}
+            onChange={(e) => {
+              setDataExame(e.target.value);
+              if (e.target.value) setValidade(diaIso(validadeNoruegues(toDay(e.target.value))));
+            }}
+          />
+          <span className="mute" style={{ fontSize: 13 }}>
+            {"A validade é calculada sozinha: " + ANOS_NORUEGUES + " anos depois do exame (pode ser ajustada)."}
+          </span>
+        </label>
+      ) : null}
+      <label id="cursl" hidden={exame}>
         Curso
         <select id="curs" value={curs} onChange={(e) => setCurs(e.target.value)}>
           {c ? null : <option value="">Escolha o curso</option>}
@@ -419,7 +440,7 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
   );
 }
 
-export function CursoDialogo({ aberto, chave, tipo, aoFechar }: Fechar & { aberto: boolean; chave: string | null; tipo: "c" | "a" }) {
+export function CursoDialogo({ aberto, chave, tipo, aoFechar }: Fechar & { aberto: boolean; chave: string | null; tipo: "c" | "a" | "n" }) {
   return (
     <Dialogo aberto={aberto} aoFechar={aoFechar} rotulo="t-cr">
       <CorpoCurso chave={chave} tipo={tipo} aoFechar={aoFechar} />

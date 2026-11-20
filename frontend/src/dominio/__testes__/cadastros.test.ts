@@ -112,6 +112,17 @@ describe("gravar colaborador", () => {
     salvarColab(S, p.id, { ...formDe(S, p), volta: "" }, [], [], 5000);
     expect(S.hist[0]).toMatchObject({ ti: 2, tv: 0 });
   });
+  it("Norueguês: a data do exame fica gravada junto com a validade", () => {
+    const S = estadoVazio();
+    const p = salvarColab(S, null, valido(), [], [{ name: "Norueguês / OEUK / ENG1", valid: toDay("2028-11-20"), exame: toDay("2026-11-20") }, { name: "CBSP", valid: T }], 5000);
+    expect(S.courses).toEqual([
+      { pid: p.id, name: "Norueguês / OEUK / ENG1", valid: toDay("2028-11-20"), exame: toDay("2026-11-20") },
+      { pid: p.id, name: "CBSP", valid: T },
+    ]);
+    // pelo diálogo da tela Cursos
+    salvarCurso(S, p.id + "|Norueguês / OEUK / ENG1", p.id, "Norueguês / OEUK / ENG1", toDay("2029-01-10"), null, toDay("2027-01-10"));
+    expect(S.courses[0]).toMatchObject({ valid: toDay("2029-01-10"), exame: toDay("2027-01-10") });
+  });
   it("datas de translado erradas não deixam salvar", () => {
     expect(validarColab(valido({ setor: "ambiental", data: "2026-11-17", ida: "2026-11-18" }))).toMatchObject({ campo: "cida" });
     expect(validarColab(valido({ setor: "ambiental", data: "2026-11-17", dias: "42", volta: "2026-12-20" }))).toMatchObject({ campo: "cvolta" });

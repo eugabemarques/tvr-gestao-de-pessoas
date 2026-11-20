@@ -75,9 +75,13 @@ A folga não gozada é compensada mais à frente, conforme o cronograma do proje
 | Folga compensatória | Compensando folga não gozada |
 | Aguardando | Folga terminou e o próximo embarque registrado começa depois do previsto |
 
-## Validade de cursos e ASO
+## Validade de cursos e exames
 
 A data de validade é o último dia válido.
+
+**Exames** (ASO e Norueguês / OEUK / ENG1) ficam separados dos cursos: têm quadro próprio na tela Cursos, cartões próprios no Painel e as faixas do ASO (vencido, até 60 dias, 61 a 90 dias, em dia).
+
+**Norueguês / OEUK / ENG1**: exame médico offshore com validade de **2 anos**. O RH informa a data do exame e a validade é calculada sozinha (mesmo dia, 2 anos depois; exame em 29/02 vence em 28/02). A validade continua editável. No back end: `TipoCurso.EhExame` e `MesesDeValidade` = 24; a data fica em `CursoColaborador.DataExame` (nas telas, `exame`).
 
 | Faixa | Regra padrão |
 |---|---|
@@ -100,7 +104,7 @@ Aparecem para quem está embarcado, ou tem embarque começando em até 30 dias (
 Cadastros por setor, carregados com as regras do protótipo:
 
 - **Todos os setores:** RG/CPF/CNH, certidão de nascimento ou casamento, título de eleitor, CTPS, comprovante de residência, comprovante de escolaridade e as três vacinas (Covid-19, DT e febre amarela). Passaporte e PIS entram só se o colaborador tiver.
-- **Ambiental:** também CTF Ibama e Work Citation, e os cursos CBSP, THUET/BOSIET/FOET e Norueguês/OEUK/ENG1. O **Certificado PAM** é opcional (um diferencial): pode ser cadastrado e anexado, mas não fica pendente.
+- **Ambiental:** também CTF Ibama e Work Citation, os cursos CBSP e THUET/BOSIET/FOET e o exame Norueguês/OEUK/ENG1. O **Certificado PAM** é opcional (um diferencial): pode ser cadastrado e anexado, mas não fica pendente.
 - **ASO:** obrigatório para todos os setores, mas **só depois da admissão**. Quem está em standby não aparece com o ASO pendente.
 
 Qualquer documento ou curso pode ser marcado como "somente após admissão" no cadastro de requisitos.

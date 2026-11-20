@@ -40,6 +40,10 @@ public sealed class BancoDeDadosTests : IDisposable
         var aso = db.RequisitosCurso.Single(r => r.SetorId == null);
         Assert.Equal("ASO", db.TiposCurso.Single(t => t.Id == aso.TipoCursoId).Nome);
         Assert.True(aso.SomenteAposAdmissao);
+        // exames: ASO e Norueguês (este com validade de 24 meses a partir do exame)
+        Assert.Equal(["ASO", "Norueguês / OEUK / ENG1"], db.TiposCurso.Where(t => t.EhExame).Select(t => t.Nome).OrderBy(n => n).ToList());
+        var noruegues = db.TiposCurso.Single(t => t.MesesDeValidade != null);
+        Assert.Equal(new DateOnly(2028, 11, 20), noruegues.ValidadePorExame(new DateOnly(2026, 11, 20)));
         Assert.Equal(2, db.RequisitosDocumento.Count(r => r.SetorId == ambiental.Id));
         Assert.Equal(9, db.RequisitosDocumento.Count(r => r.SetorId == null && r.Obrigatorio));
     }

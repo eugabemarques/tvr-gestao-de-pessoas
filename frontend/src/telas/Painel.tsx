@@ -4,7 +4,7 @@ import { Chip } from "../componentes/Comuns";
 import { fmt } from "../dominio/datas";
 import { nomeBarco, pessoa } from "../dominio/escala";
 import { unesc } from "../dominio/texto";
-import { courseState, gruposPainel, type ChavePainel } from "../dominio/validade";
+import { estadoQualquer, gruposPainel, type ChavePainel } from "../dominio/validade";
 import { T, useEstado } from "../loja";
 
 export function Painel({ oculto }: { oculto: boolean }) {
@@ -90,7 +90,7 @@ export function Painel({ oculto }: { oculto: boolean }) {
             {[...itens]
               .sort((a, b) => a.valid - b.valid)
               .map((c) => {
-                const s = courseState(c, T);
+                const s = estadoQualquer(c, T);
                 return (
                   <tr key={c.pid + "|" + c.name}>
                     <td>{c.name}</td>
@@ -130,6 +130,10 @@ export function Painel({ oculto }: { oculto: boolean }) {
         {card("c90", "Vencem em 90 dias", "warn")}
         {card("av", "ASOs vencidos", "bad")}
         {card("aa", "ASOs a vencer", "warn")}
+      </div>
+      <div className="cards r2" id="c3" hidden={oculto}>
+        {card("nv", "Norueguês vencido", "bad")}
+        {card("na", "Norueguês a vencer", "warn")}
       </div>
       <section ref={lista} className={"panel" + (sel ? "" : " off")} id="plst" aria-labelledby="lt" hidden={oculto}>
         <div className="lhead">

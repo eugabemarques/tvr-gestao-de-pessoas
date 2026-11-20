@@ -244,7 +244,9 @@ export function salvarColab(S: Estado, cedit: number | null, f: FormColab, docs:
     } else if (!cedit) S.hist.push({ pid: p.id, ini: d.embark, dias: d.dias as number, dobra: 0, boat: d.boat, ti: p.ti, tv: p.tv });
   }
   const pf = p.id;
-  S.courses = S.courses.filter((c) => c.pid != pf).concat(ccur.filter((r) => r.valid != null).map((r) => ({ pid: pf, name: r.name, valid: r.valid as number })));
+  S.courses = S.courses
+    .filter((c) => c.pid != pf)
+    .concat(ccur.filter((r) => r.valid != null).map((r) => ({ pid: pf, name: r.name, valid: r.valid as number, ...(r.exame != null ? { exame: r.exame } : {}) })));
   return p;
 }
 
@@ -302,13 +304,15 @@ export function validarCurso(S: Estado, novo: boolean, aso: boolean, nome: strin
  * Grava o curso. `chaveOriginal` (pid|nome) identifica o curso em edição.
  * O documento anexado substitui o anterior do mesmo campo.
  */
-export function salvarCurso(S: Estado, chaveOriginal: string | null, pid: number, nome: string, valid: number, doc: Documento | null): void {
+export function salvarCurso(S: Estado, chaveOriginal: string | null, pid: number, nome: string, valid: number, doc: Documento | null, exame: number | null = null): void {
   const c = chaveOriginal == null ? null : S.courses.find((x) => x.pid + "|" + x.name === chaveOriginal) || null;
   const p = pessoa(S, c ? c.pid : pid);
   if (c) {
     c.name = nome;
     c.valid = valid;
-  } else S.courses.push({ pid: (p ? p.id : pid) as number, name: nome, valid });
+    if (exame != null) c.exame = exame;
+    else delete c.exame;
+  } else S.courses.push({ pid: (p ? p.id : pid) as number, name: nome, valid, ...(exame != null ? { exame } : {}) });
   if (doc && p) {
     const campo = curCampo(nome);
     p.docs = (p.docs || []).filter((d) => d.campo !== campo).concat([{ campo, ...doc }]);

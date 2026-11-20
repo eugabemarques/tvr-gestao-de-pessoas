@@ -4,7 +4,7 @@ import { campos, docFor, docsDo, nomeSetor, opcDoc, setor, VACS } from "./docume
 import { etapasPeriodo, nomeBarco, type Calculo } from "./escala";
 import { unesc } from "./texto";
 import type { Estado, Pessoa } from "./tipos";
-import { estadoQualquer, isAso } from "./validade";
+import { estadoQualquer, isExame } from "./validade";
 
 /* ---------------- ficha do colaborador (PDF) ---------------- */
 
@@ -22,8 +22,8 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
   const dados: [string, string][] = campos(S, p).map(([k, v]) => [k, unesc(v || "") || "—"]);
   const cursos: [string, string][] = S.courses
     .filter((c) => c.pid == p.id)
-    .sort((a, b) => +isAso(b) - +isAso(a) || a.valid - b.valid)
-    .map((c) => [c.name, "Validade " + fmt(c.valid) + " (" + estadoQualquer(c, T).t.toLowerCase() + ")"]);
+    .sort((a, b) => +isExame(b) - +isExame(a) || a.valid - b.valid)
+    .map((c) => [c.name, "Validade " + fmt(c.valid) + " (" + estadoQualquer(c, T).t.toLowerCase() + ")" + (c.exame != null ? " · exame em " + fmt(c.exame) : "")]);
   const vac: [string, string][] = VACS.map(([k, n]) => {
     const d = p.vac?.[k];
     return [n, d != null ? fmt(d) : "—"];
@@ -37,7 +37,7 @@ export function fichaPdf(S: Pick<Estado, "boats" | "courses">, p: Pessoa, T: num
     sub: [nomeSetor(p.setor), unesc(p.role || "")].filter(Boolean).join(" · "),
     secoes: [
       { titulo: "Dados pessoais", linhas: dados },
-      { titulo: "Cursos e ASO", linhas: cursos.length ? cursos : [["", "Nenhum curso cadastrado."]] },
+      { titulo: "Cursos e exames", linhas: cursos.length ? cursos : [["", "Nenhum curso cadastrado."]] },
       { titulo: "Vacinas", linhas: vac },
       { titulo: "Documentos obrigatórios do setor", linhas: obrig },
       { titulo: paginasAnexos ? "Documentos anexados (a seguir, neste dossiê)" : "Documentos anexados", linhas: anexos.length ? anexos : [["", "Nenhum documento anexado."]] },

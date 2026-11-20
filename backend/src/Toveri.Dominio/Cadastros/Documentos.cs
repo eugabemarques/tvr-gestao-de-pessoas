@@ -62,6 +62,22 @@ public class TipoCurso
     public int Id { get; set; }
     public string Nome { get; set; } = "";
     public bool EhAso { get; set; }
+
+    /// <summary>
+    /// Exame médico (ASO, Norueguês / OEUK / ENG1): faixas de vencimento de 60 e 90 dias e quadro
+    /// próprio, separado dos cursos.
+    /// </summary>
+    public bool EhExame { get; set; }
+
+    /// <summary>
+    /// Meses de validade a partir da data do exame, quando o RH informa só a data do exame
+    /// (24 no Norueguês). Vazio: o RH informa a validade.
+    /// </summary>
+    public int? MesesDeValidade { get; set; }
+
+    /// <summary>Validade calculada a partir da data do exame (mesmo dia, N meses depois).</summary>
+    public DateOnly? ValidadePorExame(DateOnly dataExame) =>
+        MesesDeValidade is { } meses ? dataExame.AddMonths(meses) : null;
 }
 
 /// <summary>Curso ou ASO exigido de todos os setores (SetorId vazio) ou de um setor específico.</summary>
@@ -82,6 +98,9 @@ public class CursoColaborador
     public int TipoCursoId { get; set; }
     public TipoCurso? TipoCurso { get; set; }
     public DateOnly Validade { get; set; }
+
+    /// <summary>Data do exame (Norueguês), de onde a validade é calculada.</summary>
+    public DateOnly? DataExame { get; set; }
 
     /// <summary>Certificado anexado.</summary>
     public int? DocumentoId { get; set; }

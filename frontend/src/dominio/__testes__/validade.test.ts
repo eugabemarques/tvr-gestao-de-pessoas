@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { toDay } from "../datas";
 import { estadoVazio, type Estado } from "../tipos";
-import { alturaBarra, avisos, courseState, gruposAso, gruposCursos, gruposPainel, isAso, stAso } from "../validade";
+import {
+  alturaBarra,
+  avisos,
+  courseState,
+  estadoQualquer,
+  gruposAso,
+  gruposCursos,
+  gruposNoruegues,
+  gruposPainel,
+  isAso,
+  isExame,
+  NORUEGUES,
+  stAso,
+  validadeNoruegues,
+} from "../validade";
 import { protoAvisos, protoCourseState, protoStAso } from "./prototipo";
 
 const T = toDay("2026-11-13");
@@ -29,6 +43,26 @@ describe("faixas de validade", () => {
     expect(isAso({ name: "ASO" })).toBe(true);
     expect(isAso({ name: "aso periódico" })).toBe(true);
     expect(isAso({ name: "CBSP" })).toBe(false);
+  });
+  it("Norueguês é exame: faixas do ASO, quadro próprio e validade de 2 anos", () => {
+    const nor = { pid: 1, name: NORUEGUES, valid: T + 45 };
+    expect(isExame(nor)).toBe(true);
+    expect(isExame({ name: "CBSP" })).toBe(false);
+    expect(estadoQualquer(nor, T)).toMatchObject({ k: "warn", g: "w60", t: "Vence em 45 dias" });
+    const cursos = [nor, { pid: 1, name: "CBSP", valid: T + 45 }, { pid: 2, name: "ASO", valid: T - 1 }];
+    expect(gruposNoruegues(cursos, T).w60).toEqual([nor]);
+    expect(gruposCursos(cursos, T).warn.map((c) => c.name)).toEqual(["CBSP"]);
+    expect(gruposAso(cursos, T).bad.map((c) => c.name)).toEqual(["ASO"]);
+    // mesmo dia, 2 anos depois (inclusive em ano bissexto)
+    expect(validadeNoruegues(toDay("2026-11-20"))).toBe(toDay("2028-11-20"));
+    expect(validadeNoruegues(toDay("2028-02-29"))).toBe(toDay("2030-02-28")); // igual ao back end
+  });
+  it("cartões do painel para o Norueguês", () => {
+    const S = { ...estadoVazio(), courses: [{ pid: 1, name: NORUEGUES, valid: T - 5 }, { pid: 2, name: NORUEGUES, valid: T + 30 }, { pid: 3, name: NORUEGUES, valid: T + 300 }] };
+    const { cursos } = gruposPainel(S, T);
+    expect(cursos.nv[1].map((c) => c.pid)).toEqual([1]);
+    expect(cursos.na[1].map((c) => c.pid)).toEqual([2]);
+    expect(cursos.cv[1]).toEqual([]);
   });
   it("altura das colunas do gráfico", () => {
     expect(alturaBarra(0, 4)).toBe(6);

@@ -51,7 +51,7 @@ export function App({ usuario }: { usuario: Usuario }) {
   const [contaAb, setContaAb] = useState(false);
   const [dobra, setDobra] = useState<number | null>(null);
   const [barcoDlg, setBarcoDlg] = useState<{ id: number | null } | null>(null);
-  const [cursoDlg, setCursoDlg] = useState<{ chave: string | null; tipo: "c" | "a" } | null>(null);
+  const [cursoDlg, setCursoDlg] = useState<{ chave: string | null; tipo: "c" | "a" | "n" } | null>(null);
   const [pasta, setPasta] = useState<number | null>(null);
   const [ficha, setFicha] = useState<{ id: number | null } | null>(null);
 

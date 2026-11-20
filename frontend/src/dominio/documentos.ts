@@ -97,6 +97,8 @@ export interface LinhaCurso {
   name: string;
   valid: number | null;
   req?: boolean;
+  /** Data do exame (Norueguês). */
+  exame?: number | null;
 }
 
 /** Mantém as linhas de cursos obrigatórios do setor no topo da lista da ficha. */

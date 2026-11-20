@@ -22,7 +22,7 @@ import {
 import { etapasPeriodo, nomeBarco, periodos, pessoa, situacaoPeriodo, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
 import { iniciais, unesc } from "../dominio/texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "../dominio/tipos";
-import { courseState, isAso, stAso } from "../dominio/validade";
+import { ANOS_NORUEGUES, courseState, isExame, NORUEGUES, stAso, validadeNoruegues } from "../dominio/validade";
 import { loja, T, toast, useEstado } from "../loja";
 import { guardar } from "../servidor/api";
 
@@ -177,8 +177,8 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     const ccur: LinhaCurso[] = p
       ? S.courses
           .filter((c) => c.pid == p.id)
-          .sort((a, b) => +isAso(b) - +isAso(a) || a.valid - b.valid)
-          .map((c) => ({ name: c.name, valid: c.valid }))
+          .sort((a, b) => +isExame(b) - +isExame(a) || a.valid - b.valid)
+          .map((c) => ({ name: c.name, valid: c.valid, exame: c.exame ?? null }))
       : [];
     const f = formDe(S, p);
     return { f, docs, ccur: syncReqCur(ccur, f.setor, docs) };
@@ -310,7 +310,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
   };
 
   /* cursos da ficha */
-  const addCurso = (k: "a" | "c") => {
+  const addCurso = (k: "a" | "n" | "c") => {
     if (k === "a") {
       if (ccur.some((x) => /^ASO/i.test(x.name))) {
         toast("Este colaborador já tem ASO. Atualize a validade dele.");
@@ -318,8 +318,15 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
       }
       setCcur((c) => c.concat([{ name: "ASO", valid: null }]));
       focar("fcv" + ccur.length);
+    } else if (k === "n") {
+      if (ccur.some((x) => x.name === NORUEGUES)) {
+        toast("Este colaborador já tem o Norueguês. Atualize a data do exame.");
+        return;
+      }
+      setCcur((c) => c.concat([{ name: NORUEGUES, valid: null, exame: null }]));
+      focar("fcx" + ccur.length);
     } else {
-      if (ccur.filter((x) => !/^ASO/i.test(x.name)).length >= CURSOS.length && !ccur.some((x) => !x.name)) {
+      if (ccur.filter((x) => !isExame(x)).length >= CURSOS.length && !ccur.some((x) => !x.name)) {
         toast("Todos os cursos da lista já foram adicionados.");
         return;
       }
@@ -345,6 +352,9 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     setCcur((c) => c.map((r, j) => (j === i ? { ...r, name: nw } : r)));
   };
   const validadeCurso = (i: number, v: string) => setCcur((c) => c.map((r, j) => (j === i ? { ...r, valid: v ? toDay(v) : null } : r)));
+  /** Norueguês: a data do exame preenche a validade (2 anos depois), que continua editável. */
+  const exameCurso = (i: number, v: string) =>
+    setCcur((c) => c.map((r, j) => (j === i ? { ...r, exame: v ? toDay(v) : null, valid: v ? validadeNoruegues(toDay(v)) : r.valid } : r)));
 
   const salvar = () => {
     const bad = validarColab(f);
@@ -546,8 +556,10 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
           </section>
 
           <section hidden={sec !== "cursos"}>
-            <h3 className="fh">Cursos e ASO</h3>
-            <p className="mute fintro">Adicione os cursos e o ASO, informe a validade e anexe o certificado pelo clipe. Os arquivos vão para a pasta do colaborador ao salvar.</p>
+            <h3 className="fh">Cursos e exames</h3>
+            <p className="mute fintro">
+              Adicione os cursos e os exames (ASO e Norueguês), informe a validade e anexe o certificado pelo clipe. No Norueguês, informe a data do exame: a validade é calculada sozinha ({ANOS_NORUEGUES} anos depois). Os arquivos vão para a pasta do colaborador ao salvar.
+            </p>
             <div id="fcursos">
               <div className="row fcacts">
                 <button type="button" onClick={() => addCurso("c")}>
@@ -556,21 +568,25 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                 <button type="button" className="ghost" onClick={() => addCurso("a")}>
                   Adicionar ASO
                 </button>
+                <button type="button" className="ghost" hidden={ccur.some((x) => x.name === NORUEGUES)} onClick={() => addCurso("n")}>
+                  Adicionar Norueguês
+                </button>
               </div>
               {ccur.length ? (
                 ccur.map((r, i) => {
                   const aso = /^ASO/i.test(r.name),
-                    s = r.valid == null ? null : aso ? stAso({ valid: r.valid }, T) : courseState({ valid: r.valid }, T),
+                    nor = r.name === NORUEGUES,
+                    s = r.valid == null ? null : aso || nor ? stAso({ valid: r.valid }, T) : courseState({ valid: r.valid }, T),
                     cp = r.name ? curCampo(r.name) : "";
                   const opts: [string, string][] = CURSOS.slice();
                   if (r.name && !opts.some((x) => x[0] === r.name)) opts.push([r.name, r.name + " (nome antigo)"]);
                   const temDoc = !!cp && docs.some((d) => d.campo === cp);
                   return (
-                    <div className={"crow" + (r.req ? " req" : "")} key={i}>
+                    <div className={"crow" + (r.req ? " req" : "") + (nor ? " exa" : "")} key={i}>
                       <div className="ff">
-                        <label htmlFor={"fcn" + i}>{r.req ? "Curso obrigatório do setor" : aso ? "Exame" : "Curso"}</label>
+                        <label htmlFor={"fcn" + i}>{r.req ? (nor ? "Exame obrigatório do setor" : "Curso obrigatório do setor") : aso || nor ? "Exame" : "Curso"}</label>
                         <div className="fin">
-                          {r.req ? (
+                          {r.req || nor ? (
                             <input id={"fcn" + i} value={r.name} readOnly />
                           ) : aso ? (
                             <input id={"fcn" + i} value="ASO" readOnly />
@@ -586,6 +602,14 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                           )}
                         </div>
                       </div>
+                      {nor ? (
+                        <div className="ff">
+                          <label htmlFor={"fcx" + i}>Data do exame</label>
+                          <div className="fin">
+                            <input type="date" id={"fcx" + i} value={r.exame == null ? "" : diaIso(r.exame)} onChange={(e) => exameCurso(i, e.target.value)} />
+                          </div>
+                        </div>
+                      ) : null}
                       <div className="ff">
                         <label htmlFor={"fcv" + i}>
                           Validade

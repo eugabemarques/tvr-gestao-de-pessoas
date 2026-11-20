@@ -5,8 +5,8 @@ export interface Acoes {
   abrirPasta(id: number): void;
   abrirColab(id?: number | null): void;
   abrirBarco(id?: number | null): void;
-  /** `chave` = "pid|nome" do curso em edição, ou null para novo. */
-  abrirCurso(chave: string | null, tipo: "c" | "a"): void;
+  /** `chave` = "pid|nome" do curso em edição, ou null para novo. Tipo: curso, ASO ou Norueguês. */
+  abrirCurso(chave: string | null, tipo: "c" | "a" | "n"): void;
   abrirDobra(id: number): void;
   info(titulo: string, texto: string): void;
 }

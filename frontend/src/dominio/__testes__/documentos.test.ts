@@ -87,7 +87,7 @@ describe("ficha e textos", () => {
     expect(F.sub).toBe("Ambiental · Técnica");
     const sec = Object.fromEntries(F.secoes.map((s) => [s.titulo, s.linhas]));
     expect(sec["Dados pessoais"]).toContainEqual(["RG", "—"]);
-    expect(sec["Cursos e ASO"]).toEqual([
+    expect(sec["Cursos e exames"]).toEqual([
       ["ASO", "Validade 11/11/2026 (vencido há 2 dias)"],
       ["CBSP", "Validade 13/12/2026 (vence em 30 dias)"],
     ]);

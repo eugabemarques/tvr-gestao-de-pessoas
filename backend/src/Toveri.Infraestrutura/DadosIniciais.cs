@@ -37,11 +37,12 @@ internal static class DadosIniciais
         m.Entity<TipoCurso>().HasData(
             new TipoCurso { Id = 1, Nome = "CBSP" },
             new TipoCurso { Id = 2, Nome = "THUET / BOSIET / FOET" },
-            new TipoCurso { Id = 3, Nome = "Norueguês / OEUK / ENG1" },
+            // exame médico offshore: validade de 2 anos a partir da data do exame
+            new TipoCurso { Id = 3, Nome = "Norueguês / OEUK / ENG1", EhExame = true, MesesDeValidade = 24 },
             new TipoCurso { Id = 4, Nome = "Certificado PAM" },
             new TipoCurso { Id = 5, Nome = "MMO - Observação de Mamíferos Marinhos" },
             new TipoCurso { Id = 6, Nome = "MAP - Monitoramento Acústico Passivo" },
-            new TipoCurso { Id = 7, Nome = "ASO", EhAso = true });
+            new TipoCurso { Id = 7, Nome = "ASO", EhAso = true, EhExame = true });
 
         m.Entity<RequisitoCurso>().HasData(
             new RequisitoCurso { Id = 1, SetorId = Ids.SetorAmbiental, TipoCursoId = 1 },

@@ -73,6 +73,8 @@ export interface Curso {
   pid: number;
   name: string;
   valid: number;
+  /** Data do exame (Norueguês): a validade é calculada a partir dela. */
+  exame?: number;
 }
 
 export interface Embarque {

@@ -46,9 +46,9 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 - Cadastro de barcos (nome, tipo e observações).
 - Para cada barco: quem está a bordo hoje, próximos embarques em 30 dias e quem está de férias.
 
-**Cursos e ASO**
-- Gráficos por situação de validade. Os ASOs têm faixas de 60 e 90 dias.
-- Cadastro de curso ou ASO com validade e certificado anexado.
+**Cursos e exames**
+- Gráficos por situação de validade. Os exames (**ASO** e **Norueguês / OEUK / ENG1**) têm quadro próprio, com faixas de 60 e 90 dias e os dias para vencer de cada pessoa; o Painel tem cartões de vencidos e a vencer para cada um.
+- Cadastro de curso ou exame com validade e certificado anexado. No **Norueguês**, informa-se a data do exame e a validade é calculada sozinha (2 anos depois), podendo ser ajustada.
 
 **Colaboradores**
 - Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
