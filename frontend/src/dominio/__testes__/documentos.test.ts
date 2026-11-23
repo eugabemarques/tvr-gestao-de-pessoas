@@ -22,6 +22,11 @@ describe("documentos obrigatórios por setor", () => {
     expect(pendDocs(p)).not.toContain("Passaporte (se tiver)");
     expect(pendDocs(p).length).toBe(7);
   });
+  it("CTF Ibama é opcional no setor ambiental (continua na ficha)", () => {
+    expect(docsDo("ambiental")).toContain("CTF Ibama (atualizado)");
+    expect(pendDocs({ setor: "ambiental", docs: [] })).not.toContain("CTF Ibama (atualizado)");
+    expect(campoObrigatorio(reqInfo("ambiental", []).list, "CTF Ibama (atualizado)")).toBe(false);
+  });
   it("Certificado PAM é opcional no setor ambiental", () => {
     expect(pendDocs({ setor: "ambiental", docs: [] })).not.toContain("Certificado PAM");
     expect(campoObrigatorio(reqInfo("ambiental", []).list, "Certificado PAM")).toBe(false);
@@ -51,8 +56,8 @@ describe("documentos obrigatórios por setor", () => {
     expect(reqInfo("ambiental", unico).sec.vacinas).toBe(0);
   });
   it("conta pendências por seção da ficha", () => {
-    expect(reqInfo("ambiental", []).sec).toEqual({ dados: 8, cursos: 3, vacinas: 1 });
-    expect(reqInfo("ambiental", [...vacinas, { campo: "CBSP", name: "c.pdf" }]).sec).toEqual({ dados: 8, cursos: 2, vacinas: 0 });
+    expect(reqInfo("ambiental", []).sec).toEqual({ dados: 7, cursos: 3, vacinas: 1 });
+    expect(reqInfo("ambiental", [...vacinas, { campo: "CBSP", name: "c.pdf" }]).sec).toEqual({ dados: 7, cursos: 2, vacinas: 0 });
     expect(reqInfo("", []).list).toEqual([]);
   });
   it("campos obrigatórios (vacinas contam pelo comprovante)", () => {

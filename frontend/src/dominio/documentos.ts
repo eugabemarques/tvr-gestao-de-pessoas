@@ -64,8 +64,8 @@ export function docFor(docs: Documento[] | undefined, n: string): Documento | nu
   return VACS.every((a) => (docs || []).some((x) => x.campo === "Vacina: " + a[1])) ? { name: "3 comprovantes na seção Vacinas", virt: true } : null;
 }
 
-/** Documentos que não são cobrados: passaporte, PIS e o Certificado PAM (um diferencial, não obrigação). */
-export const opcDoc = (n: string): boolean => /se tiver/i.test(n) || n === "Nº do PIS" || n === "Certificado PAM";
+/** Documentos que não são cobrados: passaporte, PIS, Certificado PAM (um diferencial) e CTF Ibama. */
+export const opcDoc = (n: string): boolean => /se tiver/i.test(n) || n === "Nº do PIS" || n === "Certificado PAM" || n === "CTF Ibama (atualizado)";
 
 export function pendDocs(p: Pick<Pessoa, "setor" | "docs">): string[] {
   return docsDo(p.setor).filter((n) => !opcDoc(n) && !docFor(p.docs, n));

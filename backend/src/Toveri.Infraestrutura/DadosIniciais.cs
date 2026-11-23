@@ -77,7 +77,8 @@ internal static class DadosIniciais
         });
         var ambiental = new[]
         {
-            new RequisitoDocumento { Id = 12, SetorId = Ids.SetorAmbiental, TipoDocumentoId = 12 },
+            // CTF Ibama: opcional (fica na ficha do Ambiental, mas não é cobrado)
+            new RequisitoDocumento { Id = 12, SetorId = Ids.SetorAmbiental, TipoDocumentoId = 12, Obrigatorio = false },
             new RequisitoDocumento { Id = 13, SetorId = Ids.SetorAmbiental, TipoDocumentoId = 13 },
         };
         m.Entity<RequisitoDocumento>().HasData(todos.Concat(ambiental).ToArray());

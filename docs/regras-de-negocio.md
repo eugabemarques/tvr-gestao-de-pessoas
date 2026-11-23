@@ -113,7 +113,7 @@ Cadastros por setor, carregados com as regras do protótipo:
 
 - **Todos os setores:** RG/CPF/CNH, certidão de nascimento ou casamento, título de eleitor, CTPS, comprovante de residência, comprovante de escolaridade e as três vacinas (Covid-19, DT e febre amarela). Passaporte e PIS entram só se o colaborador tiver.
 - **Docs Toveri (Ambiental e Administrativo; não Manutenção Offshore):** fichas internas anexadas depois da contratação (Dados Pessoais, Contato de Emergência, Dados Bancários, Autodeclaração de Raça, Política de Drogas e Álcool). Opcionais: não geram pendência.
-- **Ambiental:** também CTF Ibama e Work Citation, os cursos CBSP e THUET/BOSIET/FOET e o exame Norueguês/OEUK/ENG1. O **Certificado PAM** é opcional (um diferencial): pode ser cadastrado e anexado, mas não fica pendente.
+- **Ambiental:** também Work Citation, os cursos CBSP e THUET/BOSIET/FOET e o exame Norueguês/OEUK/ENG1. O **Certificado PAM** e o **CTF Ibama** são opcionais: continuam na ficha para preencher e anexar, mas não ficam pendentes.
 - **ASO:** obrigatório para todos os setores, mas **só depois da admissão**. Quem está em standby não aparece com o ASO pendente.
 
 Qualquer documento ou curso pode ser marcado como "somente após admissão" no cadastro de requisitos.

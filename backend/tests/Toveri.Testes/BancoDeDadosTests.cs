@@ -45,6 +45,8 @@ public sealed class BancoDeDadosTests : IDisposable
         var noruegues = db.TiposCurso.Single(t => t.MesesDeValidade != null);
         Assert.Equal(new DateOnly(2028, 11, 20), noruegues.ValidadePorExame(new DateOnly(2026, 11, 20)));
         Assert.Equal(2, db.RequisitosDocumento.Count(r => r.SetorId == ambiental.Id));
+        // Ambiental: só o Work Citation é cobrado; o CTF Ibama é opcional
+        Assert.Equal(1, db.RequisitosDocumento.Count(r => r.SetorId == ambiental.Id && r.Obrigatorio));
         Assert.Equal(9, db.RequisitosDocumento.Count(r => r.SetorId == null && r.Obrigatorio));
     }
 
