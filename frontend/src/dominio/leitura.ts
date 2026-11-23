@@ -8,17 +8,22 @@
  */
 import { CURSO_DOCS } from "./documentos";
 
-export type CampoLido = "nome" | "cpf" | "rg" | "pis" | "tit" | "pass" | "cep";
+/** Campos da ficha que a leitura pode preencher (mesmos nomes do formulário). */
+export type CampoLido =
+  | "nome" | "cpf" | "rg" | "pis" | "tit" | "pass" | "cep"
+  | "mae" | "pai" | "rua" | "num" | "bairro" | "cidade" | "ctps" | "ctf" | "escol";
 
 export interface Leitura {
   valores: Partial<Record<CampoLido, string>>;
   /** Validade de curso/ASO, "AAAA-MM-DD". */
   validade?: string;
+  /** Data do exame (Norueguês / OEUK / ENG1), "AAAA-MM-DD": a validade é calculada a partir dela. */
+  exame?: string;
   avisos: string[];
 }
 
 /** Rótulos para as mensagens ("Lido do documento: CPF, RG"). */
-export const ROTULO_LIDO: Record<CampoLido | "validade", string> = {
+export const ROTULO_LIDO: Record<CampoLido | "validade" | "exame", string> = {
   nome: "nome",
   cpf: "CPF",
   rg: "RG",
@@ -26,10 +31,20 @@ export const ROTULO_LIDO: Record<CampoLido | "validade", string> = {
   tit: "título de eleitor",
   pass: "passaporte",
   cep: "CEP",
+  mae: "nome da mãe",
+  pai: "nome do pai",
+  rua: "rua",
+  num: "número",
+  bairro: "bairro",
+  cidade: "cidade",
+  ctps: "CTPS",
+  ctf: "CTF Ibama",
+  escol: "escolaridade",
   validade: "validade",
+  exame: "data do exame",
 };
 
-type Tipo = "identidade" | "pis" | "titulo" | "passaporte" | "residencia" | "certificado";
+type Tipo = "identidade" | "pis" | "titulo" | "passaporte" | "residencia" | "certificado" | "ctps" | "ctf" | "escolaridade" | "certidao";
 
 /** Que leitura vale para o documento anexado neste campo (nada para os demais). */
 export function tipoLeitura(campo: string): Tipo | null {
@@ -39,6 +54,10 @@ export function tipoLeitura(campo: string): Tipo | null {
   if (campo === "Título de Eleitor") return "titulo";
   if (campo === "Passaporte (se tiver)") return "passaporte";
   if (campo === "Comprovante de Residência") return "residencia";
+  if (campo === "CTPS física (e CTPS digital)") return "ctps";
+  if (campo === "CTF Ibama (atualizado)") return "ctf";
+  if (campo === "Comprovante de Escolaridade") return "escolaridade";
+  if (campo === "Certidão de Nascimento / Certidão de casamento") return "certidao";
   if (campo === "ASO" || campo.startsWith("Curso: ") || CURSO_DOCS.includes(campo)) return "certificado";
   return null;
 }
@@ -235,7 +254,7 @@ function um(valores: string[], rotulo: string, fmt: (d: string) => string, aviso
 }
 
 /** Rótulo usado no aviso "Encontrei mais de um …" de cada campo. */
-const ROTULO_AVISO: Record<CampoLido, string> = { nome: "nome", cpf: "CPF", rg: "RG", pis: "PIS", tit: "título", pass: "número de passaporte", cep: "CEP" };
+const ROTULO_AVISO: Partial<Record<CampoLido, string>> = { nome: "nome", cpf: "CPF", rg: "RG", pis: "PIS", tit: "título", pass: "número de passaporte", cep: "CEP" };
 
 /**
  * Junta a 1ª leitura (rápida) com a 2ª (detalhada): o que a 2ª achou vale mais, porque a imagem
@@ -246,7 +265,7 @@ export function juntarLeituras(r1: Leitura, r2: Leitura): Leitura {
   const valores = { ...r1.valores, ...r2.valores };
   const validade = r2.validade ?? r1.validade;
   const resolvido = (a: string) =>
-    (Object.keys(valores) as CampoLido[]).some((k) => a.startsWith("Encontrei mais de um " + ROTULO_AVISO[k] + " ")) ||
+    (Object.keys(valores) as CampoLido[]).some((k) => !!ROTULO_AVISO[k] && a.startsWith("Encontrei mais de um " + ROTULO_AVISO[k] + " ")) ||
     (!!validade && /validade/i.test(a));
   const avisos = [...new Set([...r2.avisos, ...r1.avisos])].filter((a) => !resolvido(a));
   return validade ? { valores, validade, avisos } : { valores, avisos };
@@ -280,8 +299,29 @@ export interface CamposIA {
   pis: string;
   titulo: string;
   passaporte: string;
+  ctps: string;
+  ctf: string;
+  mae: string;
+  pai: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
   cep: string;
+  escolaridade: string;
   validade: string;
+  dataExame: string;
+}
+
+const ESCOLARIDADES = ["Ensino fundamental", "Ensino médio", "Ensino técnico", "Ensino superior", "Pós-graduação"];
+
+/** "AAAA-MM-DD" de um dia que existe (anos 1950–2100), ou undefined. */
+function dataOk(v: string): string | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.trim());
+  if (!m) return undefined;
+  const [a, me, di] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(a, me - 1, di));
+  return a >= 1950 && a <= 2100 && dt.getUTCMonth() === me - 1 && dt.getUTCDate() === di ? v.trim() : undefined;
 }
 
 /**
@@ -301,15 +341,36 @@ export function leituraDaIA(campo: string, ia: CamposIA): Leitura {
     if (d.length === n && ok(d)) valores[k] = fmt(d);
     else avisos.push("O " + rotulo + " lido do documento (" + v + ") não confere. Preencha à mão.");
   };
-  const nome = () => {
-    const n = s(ia.nome).replace(/\s+/g, " ");
-    if (n.split(" ").length >= 2) valores.nome = n === n.toUpperCase() ? nomeProprio(n) : n;
+  /** Nome de pessoa: pelo menos duas palavras; em maiúsculas vira "Ana de Souza". */
+  const pessoa = (k: "nome" | "mae" | "pai", bruto: string) => {
+    const n = s(bruto).replace(/\s+/g, " ");
+    if (n.split(" ").length >= 2) valores[k] = n === n.toUpperCase() ? nomeProprio(n) : n;
+  };
+  const texto = (k: CampoLido, bruto: string) => {
+    const v = s(bruto).replace(/\s+/g, " ");
+    // endereço em MAIÚSCULAS (contas de luz) fica "Rua das Gaivotas"; números e siglas da cidade ("- RJ") não mudam
+    const maiusculas = /[A-Z]/.test(v) && v === v.toUpperCase();
+    let ajeitado = ["rua", "bairro", "num"].includes(k) && maiusculas ? nomeProprio(v) : v;
+    if (k === "cidade" && maiusculas) {
+      const [cid, ...uf] = v.split(" - ");
+      ajeitado = [nomeProprio(cid), ...uf].join(" - ");
+    }
+    if (ajeitado) valores[k] = ajeitado;
+  };
+  const filiacao = () => {
+    pessoa("mae", ia.mae);
+    pessoa("pai", ia.pai);
   };
   switch (tipo) {
     case "identidade":
       digitos("cpf", ia.cpf, 11, cpfValido, fmtCpf, "CPF");
       if (s(ia.rg)) valores.rg = s(ia.rg).toUpperCase();
-      nome();
+      pessoa("nome", ia.nome);
+      filiacao();
+      break;
+    case "certidao":
+      pessoa("nome", ia.nome);
+      filiacao();
       break;
     case "pis":
       digitos("pis", ia.pis, 11, pisValido, fmtPis, "PIS");
@@ -320,23 +381,40 @@ export function leituraDaIA(campo: string, ia: CamposIA): Leitura {
     case "passaporte": {
       const p = s(ia.passaporte).toUpperCase().replace(/[^A-Z0-9]/g, "");
       if (p.length >= 6 && p.length <= 9) valores.pass = p;
-      nome();
+      pessoa("nome", ia.nome);
+      filiacao();
       break;
     }
     case "residencia": {
+      texto("rua", ia.rua);
+      texto("num", ia.numero);
+      texto("bairro", ia.bairro);
+      texto("cidade", ia.cidade);
       const d = so(s(ia.cep));
       if (d.length === 8) valores.cep = fmtCep(d);
       break;
     }
+    case "ctps":
+      texto("ctps", ia.ctps);
+      if (s(ia.pis)) digitos("pis", ia.pis, 11, pisValido, fmtPis, "PIS");
+      break;
+    case "ctf": {
+      texto("ctf", ia.ctf);
+      const v = dataOk(s(ia.validade));
+      return v ? { valores, validade: v, avisos } : { valores, avisos };
+    }
+    case "escolaridade": {
+      const e = ESCOLARIDADES.find((x) => x.toLowerCase() === s(ia.escolaridade).toLowerCase());
+      if (e) valores.escol = e;
+      break;
+    }
     case "certificado": {
-      const v = s(ia.validade);
-      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
-      if (m) {
-        const [a, me, di] = [Number(m[1]), Number(m[2]), Number(m[3])];
-        const dt = new Date(Date.UTC(a, me - 1, di));
-        if (a >= 2000 && a <= 2100 && dt.getUTCMonth() === me - 1 && dt.getUTCDate() === di) return { valores, validade: v, avisos };
-      }
-      return { valores, avisos };
+      const r: Leitura = { valores, avisos };
+      const v = dataOk(s(ia.validade));
+      if (v) r.validade = v;
+      const ex = dataOk(s(ia.dataExame));
+      if (ex) r.exame = ex;
+      return r;
     }
   }
   return { valores, avisos };

@@ -20,27 +20,41 @@ public static class LeituraIA
     /// <summary>Limite do arquivo enviado à IA (a API aceita até 32 MB por requisição).</summary>
     public const long MaxBytes = 15 * 1024 * 1024;
 
-    public sealed record Resultado(string Nome, string Cpf, string Rg, string Pis, string Titulo, string Passaporte, string Cep, string Validade);
+    /// <summary>Tudo o que a IA consegue tirar do documento; a tela escolhe o que vale para o campo do clipe.</summary>
+    public sealed record Resultado(
+        string Nome, string Cpf, string Rg, string Pis, string Titulo, string Passaporte, string Ctps, string Ctf,
+        string Mae, string Pai, string Rua, string Numero, string Bairro, string Cidade, string Cep, string Escolaridade,
+        string Validade, string DataExame);
 
-    private static readonly string[] Campos = ["nome", "cpf", "rg", "pis", "titulo", "passaporte", "cep", "validade"];
+    private static readonly string[] Campos =
+        ["nome", "cpf", "rg", "pis", "titulo", "passaporte", "ctps", "ctf", "mae", "pai", "rua", "numero", "bairro", "cidade", "cep", "escolaridade", "validade", "data_exame"];
 
     private const string Instrucoes = """
         Você lê documentos brasileiros anexados à ficha de um colaborador no RH (RG, CNH, CPF, cartão ou extrato do PIS/NIS,
-        título de eleitor, passaporte, comprovante de residência, certificados de cursos e ASO) e devolve os dados pedidos.
+        título de eleitor, passaporte, CTPS, certidão de nascimento ou casamento, comprovante de residência, comprovante de
+        escolaridade, CTF do Ibama, certificados de cursos, exames e ASO) e devolve todos os dados pedidos que estiverem nele.
 
         Regras:
         - Copie apenas o que está escrito no documento. Nunca invente nem complete dígitos que não dá para ler: na dúvida, deixe "".
         - Campo que não existe no documento: "".
-        - nome: nome completo do titular, como está no documento (em CNH e passaporte, o do titular, não o dos pais).
+        - nome: nome completo do titular, como está no documento (em CNH, passaporte e certidão, o do titular, não o dos pais).
         - cpf: 11 dígitos no formato 000.000.000-00.
         - rg: número do documento de identidade (RG) com o dígito, sem o órgão emissor nem a UF. Na CNH, o campo
           "Doc. identidade". Não confunda com o nº de registro da CNH nem com o CPF.
         - pis: PIS/PASEP/NIS/NIT, 11 dígitos no formato 000.00000.00-0.
         - titulo: número do título de eleitor, 12 dígitos no formato 0000 0000 0000.
         - passaporte: número do passaporte (ex.: FZ123456).
-        - cep: CEP do endereço do titular (num comprovante de residência, o do cliente, não o da empresa emissora), formato 00000-000.
-        - validade: data de validade/vencimento do certificado, curso, exame ou ASO, no formato AAAA-MM-DD. Se o documento
+        - ctps: número e série da Carteira de Trabalho (ex.: 1234567 série 00123-SP). Na CTPS digital, o número que aparece como nº da CTPS (costuma ser o CPF).
+        - ctf: número do Cadastro Técnico Federal (CTF) do Ibama, ou o nº de registro do certificado de regularidade.
+        - mae / pai: nomes completos da mãe e do pai do titular (filiação), como estão no documento.
+        - rua, numero, bairro, cidade, cep: endereço do titular. Num comprovante de residência (conta de luz, água, telefone,
+          banco), é o endereço do cliente/da instalação, não o da empresa emissora. rua sem o número; numero só o número
+          (e complemento, se houver); cidade como "Cidade - UF"; cep no formato 00000-000.
+        - escolaridade: só num comprovante de escolaridade (diploma, histórico, certificado de conclusão), o nível concluído,
+          exatamente um destes: "Ensino fundamental", "Ensino médio", "Ensino técnico", "Ensino superior", "Pós-graduação". Senão "".
+        - validade: data de validade/vencimento do certificado, curso, exame, ASO ou CTF, no formato AAAA-MM-DD. Se o documento
           só tiver a data de emissão ou de realização, deixe "".
+        - data_exame: data em que o exame ou curso foi realizado/concluído, no formato AAAA-MM-DD.
         """;
 
     private static readonly Dictionary<string, JsonElement> Esquema = new()
@@ -86,6 +100,7 @@ public static class LeituraIA
         var json = string.Concat(resp.Content.Select(b => b.Value).OfType<TextBlock>().Select(t => t.Text));
         using var doc = JsonDocument.Parse(json);
         string C(string k) => doc.RootElement.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString()!.Trim() : "";
-        return new Resultado(C("nome"), C("cpf"), C("rg"), C("pis"), C("titulo"), C("passaporte"), C("cep"), C("validade"));
+        return new Resultado(C("nome"), C("cpf"), C("rg"), C("pis"), C("titulo"), C("passaporte"), C("ctps"), C("ctf"),
+            C("mae"), C("pai"), C("rua"), C("numero"), C("bairro"), C("cidade"), C("cep"), C("escolaridade"), C("validade"), C("data_exame"));
     }
 }

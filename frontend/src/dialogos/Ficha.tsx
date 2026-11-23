@@ -503,8 +503,16 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
       } else if (so(atualV) !== so(v)) avisos.push("O " + ROTULO_LIDO[k] + " do documento (" + v + ") é diferente do digitado. Confira.");
     }
     if (preenchidos.length) setF((x) => ({ ...x, ...novos }));
-    if (r.validade) {
-      const i = ca.findIndex((x) => x.name && curCampo(x.name) === campo);
+    const iCurso = ca.findIndex((x) => x.name && curCampo(x.name) === campo);
+    if (r.exame && iCurso >= 0 && ca[iCurso].name === NORUEGUES) {
+      // Norueguês / OEUK / ENG1: a ficha pede a data do exame; a validade é calculada a partir dela.
+      const ex = toDay(r.exame);
+      if (ca[iCurso].exame == null) {
+        setCcur((c) => c.map((x, j) => (j === iCurso ? { ...x, exame: ex, valid: validadeNoruegues(ex) } : x)));
+        preenchidos.push("exame");
+      } else if (ca[iCurso].exame !== ex) avisos.push("A data do exame no documento (" + fmt(ex) + ") é diferente da informada. Confira.");
+    } else if (r.validade) {
+      const i = iCurso;
       const dia = toDay(r.validade);
       if (i >= 0 && ca[i].valid == null) {
         setCcur((c) => c.map((x, j) => (j === i ? { ...x, valid: dia } : x)));
@@ -513,14 +521,14 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     }
     setLidos((s) => {
       const n = new Set(s);
-      preenchidos.forEach((k) => n.add(k === "validade" ? "curso:" + campo : "c" + k));
+      preenchidos.forEach((k) => n.add(k === "validade" || k === "exame" ? "curso:" + campo : "c" + k));
       return n;
     });
     const msg = preenchidos.length
-      ? "Lido do documento: " + preenchidos.map((k) => ROTULO_LIDO[k as CampoLido | "validade"]).join(", ") + ". Confira antes de salvar."
+      ? "Lido do documento: " + preenchidos.map((k) => ROTULO_LIDO[k as CampoLido | "validade" | "exame"]).join(", ") + ". Confira antes de salvar."
       : avisos.length
         ? ""
-        : "Não encontrei no documento nenhum número para preencher. Preencha à mão.";
+        : "Não encontrei no documento nenhum dado para preencher (ou os campos já estavam preenchidos). Preencha à mão.";
     toast([msg, ...avisos].filter(Boolean).join(" "));
   };
 

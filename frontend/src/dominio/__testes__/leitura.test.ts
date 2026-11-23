@@ -41,7 +41,8 @@ describe("qual leitura vale para cada campo", () => {
   });
   it("documentos sem leitura", () => {
     expect(tipoLeitura("Work Citation")).toBeNull();
-    expect(tipoLeitura("Certidão de Nascimento / Certidão de casamento")).toBeNull();
+    // a certidão passou a ser lida (nome e filiação) pela leitura com IA
+    expect(tipoLeitura("Certidão de Nascimento / Certidão de casamento")).toBe("certidao");
   });
 });
 

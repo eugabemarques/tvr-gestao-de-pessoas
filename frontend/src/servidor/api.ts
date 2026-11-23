@@ -1,5 +1,6 @@
 /** Chamadas ao servidor (mesmo protocolo do servidor Python de referência). */
 import { MAXF } from "../dominio/documentos";
+import type { CamposIA } from "../dominio/leitura";
 import type { Documento, Estado } from "../dominio/tipos";
 
 export const URL_LOGIN = "/entrar";
@@ -64,17 +65,7 @@ export const obterVersao = () => api<{ versao: number }>("/api/estado/versao");
 export const enviarPatch = (patch: unknown[]) => api<RespostaEstado>("/api/estado/patch", { method: "POST", body: { patch } });
 
 /** Campos que a leitura com IA devolve ("" quando o documento não traz). */
-export interface RespostaIA {
-  nome: string;
-  cpf: string;
-  rg: string;
-  pis: string;
-  titulo: string;
-  passaporte: string;
-  cep: string;
-  /** "AAAA-MM-DD" */
-  validade: string;
-}
+export type RespostaIA = CamposIA;
 
 /**
  * Lê o documento com IA no servidor (/api/ler-documento). Devolve null quando a leitura com IA não está
