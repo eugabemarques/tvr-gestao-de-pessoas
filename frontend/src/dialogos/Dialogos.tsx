@@ -6,7 +6,7 @@ import { avisoRemoverBarco, cadastrosIncompletos, marcarResolvido, removerBarco,
 import { diaIso, fmt, toDay } from "../dominio/datas";
 import { ACEITOS, campos, campoToveri, CURSOS, docFor, docsDo, docsToveriDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
 import { adicionarDobra, barco, cycle, pessoa, previaDobra } from "../dominio/escala";
-import { nomeArquivoFicha, unesc } from "../dominio/texto";
+import { nomeArquivoFicha, porNome, unesc } from "../dominio/texto";
 import { ANOS_NORUEGUES, avisos, isAso, isNoruegues, NORUEGUES, validadeNoruegues } from "../dominio/validade";
 import type { Documento } from "../dominio/tipos";
 import { loja, T, toast, useEstado } from "../loja";
@@ -148,7 +148,7 @@ function CorpoDobra({ id, aoFechar }: Fechar & { id: number }) {
   const S = useEstado();
   const [pid, setPid] = useState(String(id));
   const [dias, setDias] = useState("7");
-  const embarcados = S.people.filter((p) => p.embark != null && cycle(p, T).st === "aboard");
+  const embarcados = porNome(S.people).filter((p) => p.embark != null && cycle(p, T).st === "aboard");
   const pidEf = embarcados.some((p) => String(p.id) === pid) ? pid : embarcados.length ? String(embarcados[0].id) : "";
   const p = pessoa(S, pidEf),
     n = Math.max(1, parseInt(dias) || 0);
@@ -372,7 +372,7 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
       <label>
         Colaborador
         <select id="curp" value={pid} disabled={!!c} onChange={(e) => setPid(e.target.value)}>
-          {S.people.map((p) => (
+          {porNome(S.people).map((p) => (
             <option key={p.id} value={p.id}>
               {unesc(p.name)}
             </option>

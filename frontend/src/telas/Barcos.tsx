@@ -3,14 +3,14 @@ import type { ReactNode } from "react";
 import { useAcoes } from "../acoes";
 import { fmt } from "../dominio/datas";
 import { barco, situacao, type Situacao } from "../dominio/escala";
-import { unesc } from "../dominio/texto";
+import { porNome, unesc } from "../dominio/texto";
 import type { Barco, Pessoa } from "../dominio/tipos";
 import { T, useEstado } from "../loja";
 
 export function Barcos({ oculto }: { oculto: boolean }) {
   const S = useEstado();
   const { abrirBarco, abrirPasta } = useAcoes();
-  const ps = S.people.filter((p) => p.embark != null);
+  const ps = porNome(S.people).filter((p) => p.embark != null);
 
   const item = (p: Pessoa, t: string) => (
     <div className="bi" key={p.id}>
@@ -67,7 +67,7 @@ export function Barcos({ oculto }: { oculto: boolean }) {
     );
   };
   const sem = ps.filter((p) => !barco(S, p.boat));
-  const cards = (S.boats || []).map((b) => card(b, ps.filter((p) => p.boat == b.id)));
+  const cards = porNome(S.boats).map((b) => card(b, ps.filter((p) => p.boat == b.id)));
   if (sem.length) cards.push(card(null, sem));
 
   return (

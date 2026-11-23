@@ -14,6 +14,7 @@
  */
 import { fmt } from "./datas";
 import type { Barco, Embarque, Estado, Pessoa } from "./tipos";
+import { porNome } from "./texto";
 
 /** Dias de translado de ida antes do embarque (padrão). */
 export const TI_PADRAO = 1;
@@ -352,7 +353,7 @@ export function calc(p: Pessoa, hist: Embarque[] | undefined, de0: number | null
 
 /** Linhas do histórico: todos (id "all") ou um colaborador com escala. */
 export function dadosHistorico(S: Estado, id: string, de: number | null, ate: number): Calculo[] {
-  return S.people.filter((p) => p.embark != null && (id === "all" || p.id == (id as unknown as number))).map((p) => calc(p, S.hist, de, ate));
+  return porNome(S.people).filter((p) => p.embark != null && (id === "all" || p.id == (id as unknown as number))).map((p) => calc(p, S.hist, de, ate));
 }
 
 /** Situação de um embarque na ficha do colaborador. */

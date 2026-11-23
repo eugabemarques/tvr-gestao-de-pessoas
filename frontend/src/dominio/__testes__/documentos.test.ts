@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { toDay } from "../datas";
 import { campoObrigatorio, campos, campoToveri, curCampo, docFor, DOCS_TOVERI, docsToveriDo, docsDo, erroArq, fichaTexto, pendDocs, reqCursos, reqInfo, syncReqCur, VACDOC } from "../documentos";
 import { fichaPdf } from "../exportacao";
-import { esc, iniciais, nomeArquivoFicha, unesc } from "../texto";
+import { esc, iniciais, nomeArquivoFicha, porNome, unesc } from "../texto";
 import type { Pessoa } from "../tipos";
 
 const T = toDay("2026-11-13");
@@ -130,6 +130,12 @@ describe("ficha e textos", () => {
     const t = fichaTexto({ boats: [] }, p);
     expect(t.split("\n")[0]).toBe("Nome completo: Ana & Cia");
     expect(t).toContain("RG: —");
+  });
+  it("ordem alfabética sem diferenciar acentos e maiúsculas", () => {
+    const l = [{ name: "bruno" }, { name: "Álvaro" }, { name: "Carla" }, { name: "Alice" }, { name: esc("Ângela & Cia") }];
+    expect(porNome(l).map((x) => unesc(x.name))).toEqual(["Alice", "Álvaro", "Ângela & Cia", "bruno", "Carla"]);
+    expect(l[0].name).toBe("bruno"); // não altera a lista original
+    expect(porNome(undefined)).toEqual([]);
   });
   it("escape, iniciais e nome do arquivo", () => {
     expect(esc(`<a href="x">'&'</a>`)).toBe("&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;");

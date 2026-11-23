@@ -4,7 +4,7 @@ import { useAcoes } from "../acoes";
 import { Chip, ChipPendencias, ChipSituacao, subSituacao } from "../componentes/Comuns";
 import { nomeSetor } from "../dominio/documentos";
 import { nomeBarco, situacao } from "../dominio/escala";
-import { unesc } from "../dominio/texto";
+import { porNome, unesc } from "../dominio/texto";
 import { courseState } from "../dominio/validade";
 import { T, useEstado } from "../loja";
 
@@ -14,9 +14,7 @@ export function Colaboradores({ oculto }: { oculto: boolean }) {
   const [busca, setBusca] = useState("");
   const q = busca.toLowerCase().trim();
   // em ordem alfabética (sem diferenciar acentos e maiúsculas: "Álvaro" vem junto de "Alvaro")
-  const rows = S.people
-    .filter((p) => unesc(p.name + " " + p.role + " " + nomeBarco(S, p.boat)).toLowerCase().includes(q))
-    .sort((a, b) => unesc(a.name).localeCompare(unesc(b.name), "pt-BR", { sensitivity: "base" }));
+  const rows = porNome(S.people).filter((p) => unesc(p.name + " " + p.role + " " + nomeBarco(S, p.boat)).toLowerCase().includes(q));
 
   return (
     <section className="panel" aria-labelledby="t-co" hidden={oculto}>

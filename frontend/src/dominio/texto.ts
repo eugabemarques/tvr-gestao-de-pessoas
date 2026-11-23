@@ -17,6 +17,12 @@ export const unesc = (s: unknown): string =>
         return v ?? m;
       });
 
+/** Compara nomes em ordem alfabética, sem diferenciar acentos e maiúsculas ("Álvaro" = "alvaro"). */
+export const compararNomes = (a: unknown, b: unknown): number => unesc(a).localeCompare(unesc(b), "pt-BR", { sensitivity: "base" });
+
+/** Cópia da lista (colaboradores, barcos…) em ordem alfabética do nome. */
+export const porNome = <T extends { name: string }>(l: readonly T[] | null | undefined): T[] => [...(l || [])].sort((a, b) => compararNomes(a.name, b.name));
+
 /** Iniciais (primeira e última palavra), como o avatar do protótipo. */
 export const iniciais = (nome: string): string => {
   const w = nome.trim().split(/\s+/).filter(Boolean);

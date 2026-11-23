@@ -36,7 +36,7 @@ import {
   type CorrecaoEmbarque,
   type Periodo,
 } from "../dominio/escala";
-import { iniciais, unesc } from "../dominio/texto";
+import { iniciais, porNome, unesc } from "../dominio/texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "../dominio/tipos";
 import { ANOS_NORUEGUES, courseState, isExame, NORUEGUES, stAso, validadeNoruegues } from "../dominio/validade";
 import { loja, perfil, T, toast, useEstado } from "../loja";
@@ -337,7 +337,7 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
                         <div className="fin">
                           <select id="cebarco" value={fc.barco} onChange={(e) => setFc({ ...fc, barco: e.target.value })}>
                             <option value="">Sem barco definido</option>
-                            {(S.boats || []).map((b) => (
+                            {porNome(S.boats).map((b) => (
                               <option key={b.id} value={b.id}>
                                 {unesc(b.name)}
                               </option>
@@ -888,7 +888,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                   <div className="fin">
                     <select id="cbarco" {...txt("barco")}>
                       <option value="">Sem barco definido</option>
-                      {(S.boats || []).map((b) => (
+                      {porNome(S.boats).map((b) => (
                         <option key={b.id} value={b.id}>
                           {unesc(b.name)}
                         </option>

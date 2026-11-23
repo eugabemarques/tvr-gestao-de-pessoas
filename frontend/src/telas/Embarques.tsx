@@ -5,7 +5,7 @@ import { Chip } from "../componentes/Comuns";
 import { diaIso, fmt, iso, toDay } from "../dominio/datas";
 import { barco, cycle, dadosHistorico, emFerias, erroTranslado, nomeBarco, pessoa, previaRegistro, registrarEmbarque, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
 import { pdfHistorico, planilhaHistorico } from "../dominio/exportacao";
-import { unesc } from "../dominio/texto";
+import { porNome, unesc } from "../dominio/texto";
 import { AGORA, loja, T, toast, useEstado } from "../loja";
 import { baixar } from "../servidor/api";
 
@@ -19,7 +19,7 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
   // volta fica no último dia a bordo; dias, dobra e volta diferentes se ajustam na ficha do colaborador (aba Embarques).
   const [ida, setIda] = useState<string | null>(null);
 
-  const comEscala = S.people.filter((p) => p.embark != null);
+  const comEscala = porNome(S.people).filter((p) => p.embark != null);
   const pidEf = comEscala.some((p) => String(p.id) === pid) ? pid : comEscala.length ? String(comEscala[0].id) : "";
   const pp = pessoa(S, pidEf);
   const barcoEf = tocado ? (bsel === "" || barco(S, +bsel) ? bsel : "") : pp && barco(S, pp.boat) ? String(pp.boat) : "";
@@ -81,7 +81,7 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
               }}
             >
               <option value="">Sem barco definido</option>
-              {(S.boats || []).map((b) => (
+              {porNome(S.boats).map((b) => (
                 <option key={b.id} value={b.id}>
                   {unesc(b.name)}
                 </option>
@@ -158,7 +158,7 @@ export function Historico({ oculto }: { oculto: boolean }) {
   const [hde, setHde] = useState("");
   const [hate, setHate] = useState(iso(AGORA));
 
-  const comEscala = S.people.filter((p) => p.embark != null);
+  const comEscala = porNome(S.people).filter((p) => p.embark != null);
   const pesEf = hpes === "all" || comEscala.some((p) => String(p.id) === hpes) ? hpes : "all";
   const dados = () => dadosHistorico(S, pesEf, hde ? toDay(hde) : null, hate ? toDay(hate) : T);
   const R = dados();
@@ -281,7 +281,7 @@ export function Historico({ oculto }: { oculto: boolean }) {
 export function EquipeHoje({ oculto }: { oculto: boolean }) {
   const S = useEstado();
   const { abrirDobra } = useAcoes();
-  const cy = S.people.filter((p) => p.embark != null).map((p) => ({ p, c: cycle(p, T) }));
+  const cy = porNome(S.people).filter((p) => p.embark != null).map((p) => ({ p, c: cycle(p, T) }));
   return (
     <section className="panel" aria-labelledby="t-eq" hidden={oculto}>
       <h2 id="t-eq">Equipe hoje</h2>

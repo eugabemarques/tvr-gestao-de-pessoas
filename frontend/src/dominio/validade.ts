@@ -1,6 +1,7 @@
 /** Validade de cursos e exames (ASO e Norueguês): faixas, gráficos e avisos de embarque. */
 import { cycle, emFerias, type Ciclo } from "./escala";
 import type { Curso, Estado, Pessoa } from "./tipos";
+import { porNome } from "./texto";
 
 /** Exame médico offshore (Norueguês / OEUK / ENG1): tratado como o ASO, com validade de 2 anos. */
 export const NORUEGUES = "Norueguês / OEUK / ENG1";
@@ -111,7 +112,7 @@ export interface ItemPessoa {
 
 /** Grupos dos cartões do painel. */
 export function gruposPainel(S: Estado, T: number) {
-  const cy: ItemPessoa[] = S.people.filter((p) => p.embark != null).map((p) => ({ p, c: cycle(p, T) }));
+  const cy: ItemPessoa[] = porNome(S.people).filter((p) => p.embark != null).map((p) => ({ p, c: cycle(p, T) }));
   const ab = cy.filter((x) => x.c.st === "aboard" && !emFerias(x.p, T)),
     tr = cy.filter((x) => x.c.st === "transit" && !emFerias(x.p, T)),
     // translado é dia trabalhado: não conta como folga
