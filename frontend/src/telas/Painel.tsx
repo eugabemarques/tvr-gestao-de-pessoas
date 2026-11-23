@@ -1,11 +1,12 @@
 /** Painel: cartões de resumo e listagem do cartão escolhido. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Chip } from "../componentes/Comuns";
+import { GastoIA } from "../componentes/GastoIA";
 import { fmt } from "../dominio/datas";
 import { nomeBarco, pessoa } from "../dominio/escala";
 import { unesc } from "../dominio/texto";
 import { estadoQualquer, gruposPainel, type ChavePainel } from "../dominio/validade";
-import { T, useEstado } from "../loja";
+import { perfil, T, useEstado } from "../loja";
 
 export function Painel({ oculto }: { oculto: boolean }) {
   const S = useEstado();
@@ -169,6 +170,7 @@ export function Painel({ oculto }: { oculto: boolean }) {
           {corpo}
         </div>
       </section>
+      {perfil.admin ? <GastoIA oculto={oculto} /> : null}
     </>
   );
 }

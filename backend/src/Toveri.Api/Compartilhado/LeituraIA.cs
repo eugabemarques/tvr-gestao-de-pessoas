@@ -78,7 +78,69 @@ public static class LeituraIA
         _ => null,
     };
 
-    public static async Task<Resultado> Ler(IConfiguration cfg, byte[] conteudo, string tipo, string? dica, CancellationToken ct)
+    /// <summary>Uso real informado pela API em cada leitura: tokens de entrada e saída e o custo em dólar.</summary>
+    public sealed record Uso(string Modelo, long Entrada, long Saida, double Custo);
+
+    /// <summary>Preço por milhão de tokens (entrada, saída), em US$. Modelo desconhecido: preço do Opus (estimativa por cima).</summary>
+    private static readonly Dictionary<string, (double Entrada, double Saida)> Precos = new()
+    {
+        ["claude-haiku-5-5"] = (0.10, 0.50),
+        ["claude-sonnet-5-5"] = (2.00, 10.00),
+        ["claude-opus-5-5"] = (4.00, 20.00),
+    };
+
+    public static double Custo(string modelo, long entrada, long saida)
+    {
+        var p = Precos.TryGetValue(modelo, out var x) ? x : (4.00, 20.00);
+        return (entrada * p.Item1 + saida * p.Item2) / 1_000_000d;
+    }
+
+    public const string AcaoAuditoria = "leu documento com IA";
+
+    /// <summary>
+    /// Gasto da leitura com IA, somado da auditoria (cada leitura grava tokens e custo): hoje, este mês e o total,
+    /// no horário de Brasília. Leituras anteriores ao contador entram em <c>semCusto</c>.
+    /// </summary>
+    public static object Gasto(Microsoft.Data.Sqlite.SqliteConnection c, DateTime agoraUtc)
+    {
+        var br = TimeSpan.FromHours(-3);
+        var hoje = DateOnly.FromDateTime(agoraUtc + br);
+        int nHoje = 0, nMes = 0, nTotal = 0, semCusto = 0;
+        double cHoje = 0, cMes = 0, cTotal = 0;
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT quando, detalhe FROM auditoria WHERE acao = $a";
+        cmd.Parameters.AddWithValue("$a", AcaoAuditoria);
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            if (!DateTime.TryParse(r.GetString(0), null, System.Globalization.DateTimeStyles.AdjustToUniversal, out var q)) continue;
+            double? custo = null;
+            if (!r.IsDBNull(1))
+            {
+                try
+                {
+                    using var d = JsonDocument.Parse(r.GetString(1));
+                    if (d.RootElement.TryGetProperty("custo", out var v) && v.ValueKind == JsonValueKind.Number) custo = v.GetDouble();
+                }
+                catch (JsonException) { }
+            }
+            var dia = DateOnly.FromDateTime(q + br);
+            nTotal++;
+            if (custo is null) { semCusto++; continue; }
+            cTotal += custo.Value;
+            if (dia.Year == hoje.Year && dia.Month == hoje.Month) { nMes++; cMes += custo.Value; }
+            if (dia == hoje) { nHoje++; cHoje += custo.Value; }
+        }
+        return new
+        {
+            hoje = new { leituras = nHoje, custo = cHoje },
+            mes = new { leituras = nMes, custo = cMes },
+            total = new { leituras = nTotal - semCusto, custo = cTotal },
+            semCusto,
+        };
+    }
+
+    public static async Task<(Resultado Dados, Uso Uso)> Ler(IConfiguration cfg, byte[] conteudo, string tipo, string? dica, CancellationToken ct)
     {
         var client = new AnthropicClient { ApiKey = cfg["Toveri:ClaudeApiKey"] };
         var b64 = Convert.ToBase64String(conteudo);
@@ -87,9 +149,10 @@ public static class LeituraIA
             : new ImageBlockParam { Source = new Base64ImageSource { Data = b64, MediaType = tipo } };
         var pedido = "Documento anexado no campo \"" + (dica ?? "documento") + "\" da ficha. Extraia os dados.";
 
+        var modelo = string.IsNullOrWhiteSpace(cfg["Toveri:ClaudeModelo"]) ? ModeloPadrao : cfg["Toveri:ClaudeModelo"]!.Trim();
         var resp = await client.Messages.Create(new MessageCreateParams
         {
-            Model = string.IsNullOrWhiteSpace(cfg["Toveri:ClaudeModelo"]) ? ModeloPadrao : cfg["Toveri:ClaudeModelo"]!,
+            Model = modelo,
             MaxTokens = 4096,
             System = Instrucoes,
             OutputConfig = new OutputConfig { Effort = Effort.Low, Format = new JsonOutputFormat { Schema = Esquema } },
@@ -100,7 +163,10 @@ public static class LeituraIA
         var json = string.Concat(resp.Content.Select(b => b.Value).OfType<TextBlock>().Select(t => t.Text));
         using var doc = JsonDocument.Parse(json);
         string C(string k) => doc.RootElement.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString()!.Trim() : "";
-        return new Resultado(C("nome"), C("cpf"), C("rg"), C("pis"), C("titulo"), C("passaporte"), C("ctps"), C("ctf"),
+        var dados = new Resultado(C("nome"), C("cpf"), C("rg"), C("pis"), C("titulo"), C("passaporte"), C("ctps"), C("ctf"),
             C("mae"), C("pai"), C("rua"), C("numero"), C("bairro"), C("cidade"), C("cep"), C("escolaridade"), C("validade"), C("data_exame"));
+        var entrada = resp.Usage.InputTokens + (resp.Usage.CacheCreationInputTokens ?? 0) + (resp.Usage.CacheReadInputTokens ?? 0);
+        var saida = resp.Usage.OutputTokens;
+        return (dados, new Uso(modelo, entrada, saida, Custo(modelo, entrada, saida)));
     }
 }

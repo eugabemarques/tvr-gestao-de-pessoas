@@ -159,8 +159,13 @@ public static class RotasCompartilhadas
             var campo = form["campo"].ToString();
             try
             {
-                var r = await LeituraIA.Ler(cfg, ms.ToArray(), tipo, campo, ctx.RequestAborted);
-                e.Auditar(ctx.Usuario().Login, "leu documento com IA", new JsonObject { ["arquivo"] = arquivo.FileName, ["campo"] = campo });
+                var (r, uso) = await LeituraIA.Ler(cfg, ms.ToArray(), tipo, campo, ctx.RequestAborted);
+                // tokens e custo de cada leitura ficam na auditoria: é deles que sai o contador de gasto do Painel
+                e.Auditar(ctx.Usuario().Login, LeituraIA.AcaoAuditoria, new JsonObject
+                {
+                    ["arquivo"] = arquivo.FileName, ["campo"] = campo,
+                    ["modelo"] = uso.Modelo, ["entrada"] = uso.Entrada, ["saida"] = uso.Saida, ["custo"] = Math.Round(uso.Custo, 6),
+                });
                 return Results.Json(r);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -169,6 +174,14 @@ public static class RotasCompartilhadas
                 return Results.Json(new { erro = "Não foi possível ler com IA." }, statusCode: StatusCodes.Status502BadGateway);
             }
         }).DisableAntiforgery();
+
+        // Gasto da leitura com IA (contador do Painel, só Admin RH).
+        api.MapGet("/ia/gasto", (HttpContext ctx, IConfiguration cfg, EstadoCompartilhado e) =>
+        {
+            if (!ctx.Usuario().Admin) return Results.Json(new { erro = "Só o Admin RH vê o gasto." }, statusCode: StatusCodes.Status403Forbidden);
+            using var c = e.Conexao();
+            return Results.Json(new { configurada = LeituraIA.Configurada(cfg), gasto = LeituraIA.Gasto(c, DateTime.UtcNow) });
+        });
 
         api.MapGet("/arquivos/{fid}", (string fid, HttpContext ctx, EstadoCompartilhado e) =>
         {

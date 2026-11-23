@@ -126,3 +126,16 @@ export function baixar(filename: string, data: Blob | string, aoFalhar?: () => v
     aoFalhar?.();
   }
 }
+
+/** Gasto da leitura com IA (contador do Painel, só Admin RH). */
+export interface GastoIA {
+  configurada: boolean;
+  gasto: {
+    hoje: { leituras: number; custo: number };
+    mes: { leituras: number; custo: number };
+    total: { leituras: number; custo: number };
+    /** leituras feitas antes do contador existir (sem custo registrado) */
+    semCusto: number;
+  };
+}
+export const obterGastoIA = () => api<GastoIA>("/api/ia/gasto");
