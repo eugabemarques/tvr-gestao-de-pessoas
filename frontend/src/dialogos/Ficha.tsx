@@ -4,7 +4,7 @@ import { Chip, Dialogo } from "../componentes/Comuns";
 import { IcAncora, IcClipe, IcDados, IcFechar, IcLapis, IcLivro, IcLixeira, IcOk, IcPasta, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
 import { DATA_MAX, diaIso, diaOuNulo, fmt, toDay } from "../dominio/datas";
-import { extrairDoDocumento, faltamPrincipais, juntarLeituras, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
+import { extrairDoDocumento, faltamPrincipais, juntarLeituras, leituraDaIA, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
 import {
   ACEITOS,
   campoObrigatorio,
@@ -40,7 +40,7 @@ import { iniciais, porNome, unesc } from "../dominio/texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "../dominio/tipos";
 import { ANOS_NORUEGUES, courseState, isExame, NORUEGUES, stAso, validadeNoruegues } from "../dominio/validade";
 import { loja, perfil, T, toast, useEstado } from "../loja";
-import { guardar } from "../servidor/api";
+import { guardar, lerComIA, SessaoExpirada } from "../servidor/api";
 
 type Secao = SecaoFicha | "embarques" | "toveri";
 
@@ -457,9 +457,18 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
 
   /** Lê o documento anexado e preenche os campos que estão vazios (nunca troca o que já foi digitado). */
   const lerDocumento = async (campo: string, fl: File) => {
-    toast("Lendo o documento… A primeira leitura pode levar alguns segundos.");
-    let r: Leitura;
+    toast("Lendo o documento… Pode levar alguns segundos.");
+    let r: Leitura | null = null;
+    // 1º: leitura com IA no servidor (entende qualquer modelo de documento). Sem IA configurada ou com
+    // falha, segue para o leitor do navegador.
     try {
+      const ia = await lerComIA(campo, fl);
+      if (ia) r = leituraDaIA(campo, ia);
+    } catch (e) {
+      if (e instanceof SessaoExpirada) return;
+      console.warn("Leitura com IA", e);
+    }
+    if (!r) try {
       const { lerTexto } = await import("../servidor/ocr");
       const texto = await lerTexto(fl);
       r = extrairDoDocumento(campo, texto);
@@ -474,6 +483,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
       toast("Não foi possível ler o documento automaticamente. Preencha os campos à mão.");
       return;
     }
+    if (!r) return;
     const { f: fa, ccur: ca } = atual.current;
     // compara sem acento, pontuação nem maiúsculas ("João" = "JOAO", "123.456" = "123456")
     const so = (s: string) =>

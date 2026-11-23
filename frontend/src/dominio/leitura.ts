@@ -272,6 +272,76 @@ export function faltamPrincipais(campo: string, r: Leitura): boolean {
   }
 }
 
+/** Campos devolvidos pela leitura com IA (mesmos nomes do servidor). */
+export interface CamposIA {
+  nome: string;
+  cpf: string;
+  rg: string;
+  pis: string;
+  titulo: string;
+  passaporte: string;
+  cep: string;
+  validade: string;
+}
+
+/**
+ * Converte a resposta da leitura com IA numa Leitura, com as mesmas garantias do leitor do navegador:
+ * só os campos que fazem sentido para o documento anexado neste campo, e CPF, PIS e título apenas se
+ * passarem nos dígitos verificadores (senão, um aviso pede para conferir).
+ */
+export function leituraDaIA(campo: string, ia: CamposIA): Leitura {
+  const tipo = tipoLeitura(campo);
+  const valores: Leitura["valores"] = {};
+  const avisos: string[] = [];
+  const s = (v: string | undefined) => (v || "").trim();
+  const digitos = (k: CampoLido, bruto: string, n: number, ok: (d: string) => boolean, fmt: (d: string) => string, rotulo: string) => {
+    const v = s(bruto);
+    if (!v) return;
+    const d = so(v);
+    if (d.length === n && ok(d)) valores[k] = fmt(d);
+    else avisos.push("O " + rotulo + " lido do documento (" + v + ") não confere. Preencha à mão.");
+  };
+  const nome = () => {
+    const n = s(ia.nome).replace(/\s+/g, " ");
+    if (n.split(" ").length >= 2) valores.nome = n === n.toUpperCase() ? nomeProprio(n) : n;
+  };
+  switch (tipo) {
+    case "identidade":
+      digitos("cpf", ia.cpf, 11, cpfValido, fmtCpf, "CPF");
+      if (s(ia.rg)) valores.rg = s(ia.rg).toUpperCase();
+      nome();
+      break;
+    case "pis":
+      digitos("pis", ia.pis, 11, pisValido, fmtPis, "PIS");
+      break;
+    case "titulo":
+      digitos("tit", ia.titulo, 12, tituloValido, fmtTit, "título");
+      break;
+    case "passaporte": {
+      const p = s(ia.passaporte).toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (p.length >= 6 && p.length <= 9) valores.pass = p;
+      nome();
+      break;
+    }
+    case "residencia": {
+      const d = so(s(ia.cep));
+      if (d.length === 8) valores.cep = fmtCep(d);
+      break;
+    }
+    case "certificado": {
+      const v = s(ia.validade);
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+      if (m) {
+        const [a, me, di] = [Number(m[1]), Number(m[2]), Number(m[3])];
+        const dt = new Date(Date.UTC(a, me - 1, di));
+        if (a >= 2000 && a <= 2100 && dt.getUTCMonth() === me - 1 && dt.getUTCDate() === di) return { valores, validade: v, avisos };
+      }
+      return { valores, avisos };
+    }
+  }
+  return { valores, avisos };
+}
+
 /** O que dá para preencher a partir do texto do documento anexado no campo `campo`. */
 export function extrairDoDocumento(campo: string, texto: string): Leitura {
   const tipo = tipoLeitura(campo);

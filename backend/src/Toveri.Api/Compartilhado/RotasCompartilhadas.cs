@@ -138,6 +138,38 @@ public static class RotasCompartilhadas
             catch (ArgumentException ex) { return Results.BadRequest(new { erro = ex.Message }); }
         }).DisableAntiforgery();
 
+        // Leitura do documento com IA (ver LeituraIA). 503 quando não configurada: a tela usa o leitor do navegador.
+        api.MapPost("/ler-documento", async (HttpContext ctx, IConfiguration cfg, EstadoCompartilhado e, ILoggerFactory lf) =>
+        {
+            if (!LeituraIA.Configurada(cfg))
+                return Results.Json(new { erro = "Leitura com IA não configurada." }, statusCode: StatusCodes.Status503ServiceUnavailable);
+            if (!ctx.Request.HasFormContentType)
+                return Results.BadRequest(new { erro = "Envie o arquivo." });
+            var form = await ctx.Request.ReadFormAsync();
+            var arquivo = form.Files["arquivo"];
+            if (arquivo is null || arquivo.Length == 0)
+                return Results.BadRequest(new { erro = "Envie o arquivo." });
+            if (arquivo.Length > LeituraIA.MaxBytes)
+                return Results.BadRequest(new { erro = "Arquivo grande demais para a leitura automática." });
+            var tipo = LeituraIA.TipoDoArquivo(arquivo.FileName);
+            if (tipo is null)
+                return Results.BadRequest(new { erro = "Tipo de arquivo não lido automaticamente." });
+            using var ms = new MemoryStream();
+            await arquivo.CopyToAsync(ms);
+            var campo = form["campo"].ToString();
+            try
+            {
+                var r = await LeituraIA.Ler(cfg, ms.ToArray(), tipo, campo, ctx.RequestAborted);
+                e.Auditar(ctx.Usuario().Login, "leu documento com IA", new JsonObject { ["arquivo"] = arquivo.FileName, ["campo"] = campo });
+                return Results.Json(r);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                lf.CreateLogger("LeituraIA").LogWarning(ex, "Falha na leitura com IA");
+                return Results.Json(new { erro = "Não foi possível ler com IA." }, statusCode: StatusCodes.Status502BadGateway);
+            }
+        }).DisableAntiforgery();
+
         api.MapGet("/arquivos/{fid}", (string fid, HttpContext ctx, EstadoCompartilhado e) =>
         {
             var a = e.Arquivo(fid);

@@ -63,6 +63,37 @@ export const obterEstado = () => api<RespostaEstado>("/api/estado");
 export const obterVersao = () => api<{ versao: number }>("/api/estado/versao");
 export const enviarPatch = (patch: unknown[]) => api<RespostaEstado>("/api/estado/patch", { method: "POST", body: { patch } });
 
+/** Campos que a leitura com IA devolve ("" quando o documento não traz). */
+export interface RespostaIA {
+  nome: string;
+  cpf: string;
+  rg: string;
+  pis: string;
+  titulo: string;
+  passaporte: string;
+  cep: string;
+  /** "AAAA-MM-DD" */
+  validade: string;
+}
+
+/**
+ * Lê o documento com IA no servidor (/api/ler-documento). Devolve null quando a leitura com IA não está
+ * configurada (a tela usa o leitor do navegador); lança erro em qualquer outra falha.
+ */
+export async function lerComIA(campo: string, f: File): Promise<RespostaIA | null> {
+  const fd = new FormData();
+  fd.append("arquivo", f);
+  fd.append("campo", campo);
+  const r = await fetch("/api/ler-documento", { method: "POST", headers: { "X-Toveri": "1" }, body: fd, credentials: "same-origin" });
+  if (r.status === 401) {
+    irParaLogin();
+    throw new SessaoExpirada();
+  }
+  if (r.status === 503) return null;
+  if (!r.ok) throw new Error("Leitura com IA: erro " + r.status);
+  return (await r.json()) as RespostaIA;
+}
+
 /** Envia um arquivo (até 20 MB) e devolve o documento com `fid`. */
 export async function guardar(f: File): Promise<Documento> {
   if (f.size > MAXF) throw new Error("grande");
