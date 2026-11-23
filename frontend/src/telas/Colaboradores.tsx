@@ -13,7 +13,10 @@ export function Colaboradores({ oculto }: { oculto: boolean }) {
   const { abrirColab, abrirPasta } = useAcoes();
   const [busca, setBusca] = useState("");
   const q = busca.toLowerCase().trim();
-  const rows = S.people.filter((p) => unesc(p.name + " " + p.role + " " + nomeBarco(S, p.boat)).toLowerCase().includes(q));
+  // em ordem alfabética (sem diferenciar acentos e maiúsculas: "Álvaro" vem junto de "Alvaro")
+  const rows = S.people
+    .filter((p) => unesc(p.name + " " + p.role + " " + nomeBarco(S, p.boat)).toLowerCase().includes(q))
+    .sort((a, b) => unesc(a.name).localeCompare(unesc(b.name), "pt-BR", { sensitivity: "base" }));
 
   return (
     <section className="panel" aria-labelledby="t-co" hidden={oculto}>
