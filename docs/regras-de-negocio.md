@@ -135,7 +135,7 @@ Ao anexar um documento pelo clipe, o sistema reconhece o texto do arquivo no pr�
 
 | Documento | Campos |
 |---|---|
-| RG / CPF / CNH | CPF e RG |
+| RG / CPF / CNH, ou o clipe do campo Nome | CPF, RG (nº do documento) e, na CNH, o nome completo |
 | Nº do PIS | PIS |
 | Título de eleitor | número do título |
 | Passaporte | número do passaporte |
@@ -146,6 +146,9 @@ Ao anexar um documento pelo clipe, o sistema reconhece o texto do arquivo no pr�
 - Se o documento tiver mais de um valor possível (ex.: conta de luz com o CEP da empresa e o do cliente), nada é preenchido e o aviso mostra os valores encontrados.
 - Se o campo já tiver um valor diferente do documento, ele não é trocado; o aviso pede para conferir.
 - Cada campo preenchido fica marcado "Lido do documento, confira" até ser editado. Nada é salvo sem o RH clicar em Salvar.
-- Nomes (mãe, pai) e endereço não são lidos: são textos livres que só uma IA conseguiria separar com segurança.
+- Nomes de mãe e pai e endereço não são lidos: são textos livres que só uma IA conseguiria separar com segurança. O **nome do colaborador** só é lido das linhas de código do rodapé da CNH e do passaporte ("ANA<<MARIA<…"), sem acentos; preenche só se o campo Nome estiver vazio.
+- O **nº do documento** é reconhecido pelo número seguido do órgão emissor ("201234567 SSP SP", inclusive colado: "SSPSP") ou pelo primeiro número depois de "Registro Geral" / "Doc. Identidade".
+- **Leitura em duas etapas:** a 1ª é rápida (1 a 3 s). Se faltar o campo principal (CPF ou RG no documento de identidade; o número nos demais; a validade nos certificados), vem a 2ª, mais lenta (10 a 15 s): lê as imagens que estão dentro do PDF na resolução original (ex.: o cartão da CNH digital, que traz só a assinatura como texto) ou a foto ampliada, em tons de cinza. O que a 2ª achar vale mais que a 1ª.
+- Testado com uma CNH digital real (imagem e PDF): nome, CPF e nº do documento lidos corretamente.
 - O CPF é validado pelos dígitos verificadores e não pode se repetir.
 - Colaboradores não são apagados: o desligamento é registrado por data e o histórico é mantido. O banco recusa apagar qualquer registro que tenha histórico ligado a ele.

@@ -8,7 +8,7 @@
  */
 import { CURSO_DOCS } from "./documentos";
 
-export type CampoLido = "cpf" | "rg" | "pis" | "tit" | "pass" | "cep";
+export type CampoLido = "nome" | "cpf" | "rg" | "pis" | "tit" | "pass" | "cep";
 
 export interface Leitura {
   valores: Partial<Record<CampoLido, string>>;
@@ -19,6 +19,7 @@ export interface Leitura {
 
 /** Rótulos para as mensagens ("Lido do documento: CPF, RG"). */
 export const ROTULO_LIDO: Record<CampoLido | "validade", string> = {
+  nome: "nome",
   cpf: "CPF",
   rg: "RG",
   pis: "PIS",
@@ -32,7 +33,8 @@ type Tipo = "identidade" | "pis" | "titulo" | "passaporte" | "residencia" | "cer
 
 /** Que leitura vale para o documento anexado neste campo (nada para os demais). */
 export function tipoLeitura(campo: string): Tipo | null {
-  if (campo === "RG / CPF / CNH") return "identidade";
+  // o clipe do Nome também recebe o documento de identidade (RG ou CNH)
+  if (campo === "RG / CPF / CNH" || campo === "Nome") return "identidade";
   if (campo === "Nº do PIS") return "pis";
   if (campo === "Título de Eleitor") return "titulo";
   if (campo === "Passaporte (se tiver)") return "passaporte";
@@ -85,8 +87,9 @@ export function tituloValido(t: string): boolean {
 
 /**
  * Tira acentos e corrige trocas comuns do OCR dentro de números:
- * O→0, l/I→1 e, num número com pontos (12.345.678-9), uma barra no meio de um grupo de 3 → 7
- * (o 7 é lido como "/" com frequência; datas não têm pontos e não são afetadas).
+ * O→0, l/I→1, espaços soltos em volta de ponto e hífen ("529.982 .247-25"), e, num número com
+ * pontos (12.345.678-9), uma barra no meio de um grupo de 3 → 7 (o 7 é lido como "/" com
+ * frequência; datas não têm pontos e não são afetadas).
  */
 export function normalizar(texto: string): string {
   return texto
@@ -94,6 +97,7 @@ export function normalizar(texto: string): string {
     .replace(/[̀-ͯ]/g, "")
     .replace(/(?<=\d)[Oo](?=[\d.\-/ ]*\d)/g, "0")
     .replace(/(?<=\d)[lI|](?=[\d.\-/ ]*\d)/g, "1")
+    .replace(/(?<=\d)[ \t]*([.\-])[ \t]*(?=\d)/g, "$1")
     .replace(/(?<=\d\.)[\d/]{3}(?=[.\-\s]|$)/gm, (g) => (g.split("/").length === 2 && /\d/.test(g[0]) ? g.replace("/", "7") : g))
     .replace(/[ \t]+/g, " ");
 }
@@ -136,14 +140,56 @@ export function acharCeps(t: string): string[] {
   return unicos(rot.concat(com));
 }
 
-/** RG: o número logo depois de "Registro Geral", "RG" ou "Doc. Identidade" (formato varia por estado). */
+const RG_NUM = "(?:\\d{1,3}\\.)?\\d{3}\\.?\\d{3}-?[0-9Xx]|\\d{5,14}";
+/** Órgãos emissores mais comuns (o número do documento vem logo antes deles: "201234567 SSP SP"). */
+const ORGAOS = "SSP|SDS|SESP|SEJUSP|SSPDS|SESDEC|DETRAN|IFP|IIRGD|IGP|ITEP|DGPC|PCMG|PC|DIC|DPF|MD|MEX|MAER";
+
+/**
+ * RG / documento de identidade (formato varia por estado):
+ * 1º o número seguido do órgão emissor ("201234567 SSP SP", "201234567 DETRAN RJ");
+ * 2º o primeiro número nos 120 caracteres depois de "Registro Geral", "RG" ou "Doc. Identidade"
+ *    (o OCR costuma deixar lixo entre o rótulo e o número).
+ */
 export function acharRg(t: string, cpfs: string[]): string[] {
+  const ok = (v: string) => {
+    const d = v.replace(/[^\dX]/gi, "");
+    return d.length >= 5 && !cpfs.includes(d);
+  };
+  // o órgão pode vir colado com a UF ("SSPSP", "SSP/SP")
+  const comOrgao = todos(new RegExp("(?<![\\d.])(" + RG_NUM + ")[ \\t]*[-/]?[ \\t]*(?:" + ORGAOS + ")(?:[ \\t/-]*[A-Z]{2})?(?![A-Z])", "i"), t)
+    .map((m) => m[1].toUpperCase())
+    .filter(ok);
+  if (comOrgao.length) return unicos(comOrgao);
   const out: string[] = [];
-  for (const m of todos(/(REGISTRO GERAL|DOC\.? ?(DE )?IDENTIDADE|IDENTIDADE|\bR\.? ?G\.?\b)[^0-9]{0,40}((\d{1,3}\.?)?\d{3}\.?\d{3}-?[0-9Xx]|\d{5,14})/i, t)) {
-    const v = m[3].toUpperCase();
-    const d = v.replace(/[^\dX]/g, "");
-    if (d.length < 5 || cpfs.includes(d)) continue;
-    out.push(v);
+  for (const m of todos(/REGISTRO GERAL|DOC\.? ?(?:DE )?IDENTIDADE|IDENTIDADE|\bR\.? ?G\.?\b/i, t)) {
+    const trecho = t.slice(m.index + m[0].length, m.index + m[0].length + 120);
+    const n = new RegExp("(?<![\\d./])(" + RG_NUM + ")(?![\\d/])").exec(trecho);
+    if (n && ok(n[1])) out.push(n[1].toUpperCase());
+  }
+  return unicos(out);
+}
+
+const MINUSCULAS = new Set(["de", "da", "do", "das", "dos", "e"]);
+/** "ANA DE SOUZA" → "Ana de Souza". */
+export const nomeProprio = (s: string): string =>
+  s
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, i) => (i > 0 && MINUSCULAS.has(w) ? w : w[0].toUpperCase() + w.slice(1)))
+    .join(" ");
+
+/**
+ * Nome completo nas linhas de código do rodapé da CNH e do passaporte (zona de leitura mecânica):
+ * "ANA<<MARIA<DE<SOUZA<<<<" → "Ana Maria de Souza". Ignora as linhas com números.
+ */
+export function acharNomesMrz(texto: string): string[] {
+  const out: string[] = [];
+  for (const linha of texto.toUpperCase().split(/\n/)) {
+    const l = linha.replace(/\s/g, "").replace(/^P<[A-Z]{3}/, "");
+    if (!/^[A-Z<]{12,44}$/.test(l) || !l.includes("<<")) continue;
+    const partes = l.replace(/<+/g, " ").trim().split(" ");
+    if (partes.length >= 2 && partes.every((p) => p.length >= 2 || MINUSCULAS.has(p.toLowerCase()))) out.push(nomeProprio(partes.join(" ")));
   }
   return unicos(out);
 }
@@ -188,6 +234,44 @@ function um(valores: string[], rotulo: string, fmt: (d: string) => string, aviso
   return undefined;
 }
 
+/** Rótulo usado no aviso "Encontrei mais de um …" de cada campo. */
+const ROTULO_AVISO: Record<CampoLido, string> = { nome: "nome", cpf: "CPF", rg: "RG", pis: "PIS", tit: "título", pass: "número de passaporte", cep: "CEP" };
+
+/**
+ * Junta a 1ª leitura (rápida) com a 2ª (detalhada): o que a 2ª achou vale mais, porque a imagem
+ * foi lida ampliada e mais nítida; o que só a 1ª achou é mantido. Avisos de "mais de um" somem
+ * quando o campo acabou preenchido.
+ */
+export function juntarLeituras(r1: Leitura, r2: Leitura): Leitura {
+  const valores = { ...r1.valores, ...r2.valores };
+  const validade = r2.validade ?? r1.validade;
+  const resolvido = (a: string) =>
+    (Object.keys(valores) as CampoLido[]).some((k) => a.startsWith("Encontrei mais de um " + ROTULO_AVISO[k] + " ")) ||
+    (!!validade && /validade/i.test(a));
+  const avisos = [...new Set([...r2.avisos, ...r1.avisos])].filter((a) => !resolvido(a));
+  return validade ? { valores, validade, avisos } : { valores, avisos };
+}
+
+/** Campos principais de cada tipo: se a primeira leitura não achar algum, vale ler de novo com mais detalhe. */
+export function faltamPrincipais(campo: string, r: Leitura): boolean {
+  switch (tipoLeitura(campo)) {
+    case "identidade":
+      return !r.valores.cpf || !r.valores.rg;
+    case "pis":
+      return !r.valores.pis;
+    case "titulo":
+      return !r.valores.tit;
+    case "passaporte":
+      return !r.valores.pass;
+    case "residencia":
+      return !r.valores.cep;
+    case "certificado":
+      return !r.validade;
+    default:
+      return false;
+  }
+}
+
 /** O que dá para preencher a partir do texto do documento anexado no campo `campo`. */
 export function extrairDoDocumento(campo: string, texto: string): Leitura {
   const tipo = tipoLeitura(campo);
@@ -202,6 +286,7 @@ export function extrairDoDocumento(campo: string, texto: string): Leitura {
       const cpfs = acharCpfs(t);
       por("cpf", um(cpfs, "CPF", fmtCpf, avisos));
       por("rg", um(acharRg(t, cpfs), "RG", (x) => x, avisos));
+      por("nome", um(acharNomesMrz(t), "nome", (x) => x, avisos));
       break;
     }
     case "pis":
@@ -212,6 +297,7 @@ export function extrairDoDocumento(campo: string, texto: string): Leitura {
       break;
     case "passaporte":
       por("pass", um(acharPassaportes(t), "número de passaporte", (x) => x, avisos));
+      por("nome", um(acharNomesMrz(t), "nome", (x) => x, avisos));
       break;
     case "residencia":
       por("cep", um(acharCeps(t), "CEP", fmtCep, avisos));

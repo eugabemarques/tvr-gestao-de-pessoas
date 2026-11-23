@@ -4,7 +4,7 @@ import { Chip, Dialogo } from "../componentes/Comuns";
 import { IcAncora, IcClipe, IcDados, IcFechar, IcLapis, IcLivro, IcLixeira, IcOk, IcPasta, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
 import { diaIso, fmt, toDay } from "../dominio/datas";
-import { extrairDoDocumento, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
+import { extrairDoDocumento, faltamPrincipais, juntarLeituras, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
 import {
   ACEITOS,
   campoObrigatorio,
@@ -461,14 +461,27 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     let r: Leitura;
     try {
       const { lerTexto } = await import("../servidor/ocr");
-      r = extrairDoDocumento(campo, await lerTexto(fl));
+      const texto = await lerTexto(fl);
+      r = extrairDoDocumento(campo, texto);
+      if (faltamPrincipais(campo, r)) {
+        // 2ª tentativa: imagem do PDF e versão ampliada em tons de cinza (letras pequenas, como as da
+        // CNH). O que ela achar vale mais que a 1ª leitura.
+        toast("Lendo o documento com mais detalhe… Pode levar alguns segundos.");
+        r = juntarLeituras(r, extrairDoDocumento(campo, await lerTexto(fl, true)));
+      }
     } catch (e) {
       console.warn("Leitura do documento", e);
       toast("Não foi possível ler o documento automaticamente. Preencha os campos à mão.");
       return;
     }
     const { f: fa, ccur: ca } = atual.current;
-    const so = (s: string) => s.replace(/[^\dA-Za-z]/g, "").toUpperCase();
+    // compara sem acento, pontuação nem maiúsculas ("João" = "JOAO", "123.456" = "123456")
+    const so = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/[^\dA-Za-z]/g, "")
+        .toUpperCase();
     const preenchidos: string[] = [];
     const avisos = [...r.avisos];
     const novos: Partial<FormColab> = {};

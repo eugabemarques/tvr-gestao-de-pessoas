@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { acharValidade, cpfValido, extrairDoDocumento, normalizar, pisValido, primeiraData, tipoLeitura, tituloValido } from "../leitura";
+import {
+  acharNomesMrz,
+  acharValidade,
+  cpfValido,
+  extrairDoDocumento,
+  faltamPrincipais,
+  juntarLeituras,
+  nomeProprio,
+  normalizar,
+  pisValido,
+  primeiraData,
+  tipoLeitura,
+  tituloValido,
+} from "../leitura";
 
 describe("dígitos verificadores", () => {
   it("CPF", () => {
@@ -52,6 +65,53 @@ describe("RG / CPF / CNH", () => {
   });
   it("número com dígito errado (leitura ruim) não é preenchido", () => {
     expect(extrairDoDocumento("RG / CPF / CNH", "CPF 529.982.247-26").valores.cpf).toBeUndefined();
+  });
+});
+
+describe("CNH digital (texto como o OCR devolve, dados fictícios)", () => {
+  // mesmo formato do OCR de uma CNH real ampliada: lixo entre rótulo e número, espaço solto no CPF
+  const cnh = [
+    "CARTEIRA NACIONAL DE HABILITAÇÃO / DRIVER LICENSE / PERMISO DE CONDUCCIÓN [=] —",
+    "(MARIA FICTICIA DE SOUZA | [0510472024 ) 2 E OT RUE O: .",
+    '44 O0C IDENTIDADE / ÓSG IMESSOR / 66  . e a E r - "l',
+    '[201234567 ssp sp ) E "1 AT. q. . El n +',
+    "qo | 529.982 .247-25 | 0860904970 | AB ) 1% Eptúgo",
+    "Documento assinado com certificado digital em conformidade com a Medida Provisória nº 2200-2/2001.",
+    "I<BRA086090497<106<<<<<<<<<<<<",
+    "9405114F3308040BRA<<<<<<<<<<<8",
+    "MARIA<<FICTICIA<DE<SOUZA<<<<<<",
+  ].join("\n");
+  it("CPF com espaço solto, nº do documento antes do órgão emissor e nome das linhas de código", () => {
+    expect(extrairDoDocumento("RG / CPF / CNH", cnh).valores).toEqual({ cpf: "529.982.247-25", rg: "201234567", nome: "Maria Ficticia de Souza" });
+  });
+  it("órgão emissor colado com a UF (SSPSP, SSP/SP)", () => {
+    expect(extrairDoDocumento("Nome", '[201234567 SSPSP ) E "1').valores.rg).toBe("201234567");
+    expect(extrairDoDocumento("Nome", "RG 12.345.678-9 SSP/SP").valores.rg).toBe("12.345.678-9");
+  });
+  it("o clipe do campo Nome também lê o documento de identidade", () => {
+    expect(tipoLeitura("Nome")).toBe("identidade");
+    expect(extrairDoDocumento("Nome", cnh).valores.cpf).toBe("529.982.247-25");
+  });
+  it("só o texto da assinatura digital (PDF sem leitura da imagem): faltam os campos principais", () => {
+    const r = extrairDoDocumento("Nome", "Documento assinado com certificado digital em conformidade com a Medida Provisória nº 2200-2/2001.");
+    expect(r.valores).toEqual({});
+    expect(faltamPrincipais("Nome", r)).toBe(true);
+    expect(faltamPrincipais("Nome", extrairDoDocumento("Nome", cnh))).toBe(false);
+  });
+  it("no mesmo texto, valores que discordam não preenchem: avisam", () => {
+    const r = extrairDoDocumento("Nome", cnh + "\nMARIAC<FICTICIA<DE<SOUZA<<<<<<");
+    expect(r.valores.nome).toBeUndefined();
+    expect(r.avisos.join(" ")).toContain("mais de um nome");
+  });
+  it("1ª leitura (rápida) + 2ª (detalhada): a detalhada vale mais e o aviso resolvido some", () => {
+    const r1 = { valores: { nome: "Mariac Ficticia de Souza", rg: "201234567" }, avisos: ["Encontrei mais de um CPF no documento (x, y). Preencha o certo."] };
+    const r2 = { valores: { nome: "Maria Ficticia de Souza", cpf: "529.982.247-25" }, avisos: [] };
+    expect(juntarLeituras(r1, r2)).toEqual({ valores: { nome: "Maria Ficticia de Souza", rg: "201234567", cpf: "529.982.247-25" }, avisos: [] });
+  });
+  it("linhas de código: passaporte e linhas com números", () => {
+    expect(acharNomesMrz("P<BRASOUZA<<MARIA<FICTICIA<<<<<<<<<<<<<<<<<<<\nFZ123456<0BRA9405114F3308040<<<<<<<<<<<<<<04")).toEqual(["Souza Maria Ficticia"]);
+    expect(acharNomesMrz("I<BRA086090497<106<<<<<<<<<<<<")).toEqual([]);
+    expect(nomeProprio("ANA DOS SANTOS E SILVA")).toBe("Ana dos Santos e Silva");
   });
 });
 
