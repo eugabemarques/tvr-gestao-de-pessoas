@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
 import { useAcoes } from "../acoes";
 import { avisoRemoverBarco, cadastrosIncompletos, marcarResolvido, removerBarco, removerCurso, salvarBarco, salvarCurso, tripulantesDoBarco, validarBarco, validarCurso } from "../dominio/cadastros";
-import { diaIso, fmt, toDay } from "../dominio/datas";
+import { DATA_MAX, diaIso, fmt, toDay } from "../dominio/datas";
 import { ACEITOS, campos, campoToveri, CURSOS, docFor, docsDo, docsToveriDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
 import { adicionarDobra, barco, cycle, pessoa, previaDobra } from "../dominio/escala";
 import { nomeArquivoFicha, porNome, unesc } from "../dominio/texto";
@@ -387,7 +387,7 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
         <label>
           Data do exame
           <input
-            type="date"
+            type="date" max={DATA_MAX}
             id="curx"
             value={dataExame}
             onChange={(e) => {
@@ -413,7 +413,7 @@ function CorpoCurso({ chave, tipo, aoFechar }: Fechar & { chave: string | null; 
       </label>
       <label>
         Validade
-        <input type="date" id="curv" value={validade} onChange={(e) => setValidade(e.target.value)} />
+        <input type="date" max={DATA_MAX} id="curv" value={validade} onChange={(e) => setValidade(e.target.value)} />
       </label>
       <label>
         Anexar documento novo (PDF ou imagem, até 20 MB)

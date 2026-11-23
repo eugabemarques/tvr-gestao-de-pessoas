@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useAcoes } from "../acoes";
 import { Chip } from "../componentes/Comuns";
-import { diaIso, fmt, iso, toDay } from "../dominio/datas";
+import { DATA_MAX, diaIso, fmt, iso, toDay } from "../dominio/datas";
 import { barco, cycle, dadosHistorico, emFerias, erroTranslado, nomeBarco, pessoa, previaRegistro, registrarEmbarque, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
 import { pdfHistorico, planilhaHistorico } from "../dominio/exportacao";
 import { porNome, unesc } from "../dominio/texto";
@@ -90,11 +90,11 @@ export function RegistrarEmbarque({ oculto }: { oculto: boolean }) {
           </label>
           <label>
             Translado de ida
-            <input type="date" id="tida" value={idaEf} onChange={(e) => setIda(e.target.value)} />
+            <input type="date" max={DATA_MAX} id="tida" value={idaEf} onChange={(e) => setIda(e.target.value)} />
           </label>
           <label>
             Data de embarque
-            <input type="date" id="data" value={data} onChange={(e) => setData(e.target.value)} />
+            <input type="date" max={DATA_MAX} id="data" value={data} onChange={(e) => setData(e.target.value)} />
           </label>
           <p className="mute" style={{ margin: "-4px 0 10px", fontSize: 13 }}>
             {"Padrão: translado de ida no dia anterior ao embarque e " + n + " dias a bordo (escala do colaborador). Outros ajustes: ficha do colaborador, aba Embarques."}
@@ -219,11 +219,11 @@ export function Historico({ oculto }: { oculto: boolean }) {
         <div className="g2">
           <label>
             De (opcional)
-            <input type="date" id="hde" value={hde} onChange={(e) => setHde(e.target.value)} />
+            <input type="date" max={DATA_MAX} id="hde" value={hde} onChange={(e) => setHde(e.target.value)} />
           </label>
           <label>
             Até
-            <input type="date" id="hate" value={hate} onChange={(e) => setHate(e.target.value || iso(AGORA))} />
+            <input type="date" max={DATA_MAX} id="hate" value={hate} onChange={(e) => setHate(e.target.value || iso(AGORA))} />
           </label>
         </div>
       </div>

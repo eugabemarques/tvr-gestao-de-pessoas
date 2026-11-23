@@ -3,7 +3,7 @@ import { Fragment, useRef, useState, type ReactNode } from "react";
 import { Chip, Dialogo } from "../componentes/Comuns";
 import { IcAncora, IcClipe, IcDados, IcFechar, IcLapis, IcLivro, IcLixeira, IcOk, IcPasta, IcPessoa, IcVacina } from "../componentes/Icones";
 import { cursosPreenchidos, formDe, pendenciasColab, removerColab, salvarColab, validarColab, validarCursosFicha, type FormColab } from "../dominio/cadastros";
-import { diaIso, fmt, toDay } from "../dominio/datas";
+import { DATA_MAX, diaIso, diaOuNulo, fmt, toDay } from "../dominio/datas";
 import { extrairDoDocumento, faltamPrincipais, juntarLeituras, ROTULO_LIDO, tipoLeitura, type CampoLido, type Leitura } from "../dominio/leitura";
 import {
   ACEITOS,
@@ -572,10 +572,16 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
     }
     setCcur((c) => c.map((r, j) => (j === i ? { ...r, name: nw } : r)));
   };
-  const validadeCurso = (i: number, v: string) => setCcur((c) => c.map((r, j) => (j === i ? { ...r, valid: v ? toDay(v) : null } : r)));
+  const validadeCurso = (i: number, v: string) => setCcur((c) => c.map((r, j) => (j === i ? { ...r, valid: diaOuNulo(v) } : r)));
   /** Norueguês: a data do exame preenche a validade (2 anos depois), que continua editável. */
   const exameCurso = (i: number, v: string) =>
-    setCcur((c) => c.map((r, j) => (j === i ? { ...r, exame: v ? toDay(v) : null, valid: v ? validadeNoruegues(toDay(v)) : r.valid } : r)));
+    setCcur((c) =>
+      c.map((r, j) => {
+        if (j !== i) return r;
+        const ex = diaOuNulo(v);
+        return { ...r, exame: ex, valid: ex != null ? validadeNoruegues(ex) : r.valid };
+      }),
+    );
 
   const salvar = () => {
     const bad = validarColab(f);
@@ -828,7 +834,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                         <div className="ff">
                           <label htmlFor={"fcx" + i}>Data do exame</label>
                           <div className="fin">
-                            <input type="date" id={"fcx" + i} value={r.exame == null ? "" : diaIso(r.exame)} onChange={(e) => exameCurso(i, e.target.value)} />
+                            <input type="date" max={DATA_MAX} id={"fcx" + i} value={r.exame == null ? "" : diaIso(r.exame)} onChange={(e) => exameCurso(i, e.target.value)} />
                           </div>
                         </div>
                       ) : null}
@@ -839,9 +845,9 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                         </label>
                         <div className="fin">
                           <input
-                            type="date"
+                            type="date" max={DATA_MAX}
                             id={"fcv" + i}
-                            value={r.valid == null ? "" : new Date(r.valid * 864e5).toISOString().slice(0, 10)}
+                            value={diaIso(r.valid)}
                             onChange={(e) => {
                               validadeCurso(i, e.target.value);
                               if (cp) conferido("curso:" + cp);
@@ -899,13 +905,13 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                 <div className="ff">
                   <label htmlFor="cida">Translado de ida</label>
                   <div className="fin">
-                    <input type="date" id="cida" value={f.ida || (f.data ? diaIso(toDay(f.data) - TI_PADRAO) : "")} onChange={(e) => set("ida", e.target.value)} />
+                    <input type="date" max={DATA_MAX} id="cida" value={f.ida || (f.data ? diaIso(toDay(f.data) - TI_PADRAO) : "")} onChange={(e) => set("ida", e.target.value)} />
                   </div>
                 </div>
                 <div className="ff">
                   <label htmlFor="cdata">Data do embarque atual ou do próximo</label>
                   <div className="fin">
-                    <input type="date" id="cdata" {...txt("data")} />
+                    <input type="date" max={DATA_MAX} id="cdata" {...txt("data")} />
                   </div>
                 </div>
                 <div className="ff">
@@ -918,7 +924,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                   <label htmlFor="cvolta">Translado de volta</label>
                   <div className="fin">
                     <input
-                      type="date"
+                      type="date" max={DATA_MAX}
                       id="cvolta"
                       value={f.volta || (f.data ? diaIso(toDay(f.data) + (parseInt(f.dias) || 0) + (p && p.embark === toDay(f.data) && String(p.dias) === f.dias ? p.dobra || 0 : 0) - 1 + TV_PADRAO) : "")}
                       onChange={(e) => set("volta", e.target.value)}
@@ -938,13 +944,13 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
               <div className="ff">
                 <label htmlFor="cfi">Início (opcional)</label>
                 <div className="fin">
-                  <input type="date" id="cfi" {...txt("fi")} />
+                  <input type="date" max={DATA_MAX} id="cfi" {...txt("fi")} />
                 </div>
               </div>
               <div className="ff">
                 <label htmlFor="cff">Fim</label>
                 <div className="fin">
-                  <input type="date" id="cff" {...txt("ff")} />
+                  <input type="date" max={DATA_MAX} id="cff" {...txt("ff")} />
                 </div>
               </div>
             </div>
@@ -964,7 +970,7 @@ function CorpoFicha({ cedit, aoFechar }: { cedit: number | null; aoFechar: () =>
                 const rot = nome + (k === "fa" ? " · data da dose" : " · data da última dose");
                 return (
                   <Campo key={k} ctx={ctx} id={id} rotulo={rot} w2>
-                    <input id={id} type="date" autoComplete="off" value={f.vac[k]} onChange={(e) => set("vac", { ...f.vac, [k]: e.target.value })} />
+                    <input id={id} type="date" max={DATA_MAX} autoComplete="off" value={f.vac[k]} onChange={(e) => set("vac", { ...f.vac, [k]: e.target.value })} />
                     {i === Math.floor(VACS.length / 2) ? (
                       <Clip ctx={ctx} anexo={VACDOC} rotulo="Comprovante de vacinação (as três vacinas)" />
                     ) : (

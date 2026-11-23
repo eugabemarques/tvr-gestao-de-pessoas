@@ -1,5 +1,5 @@
 /** Entrada: lê o usuário e os dados do servidor e monta a tela. */
-import { StrictMode } from "react";
+import { Component, StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { loja, perfil } from "./loja";
@@ -24,6 +24,35 @@ function Mensagem({ texto, sair }: { texto: string; sair?: boolean }) {
       </section>
     </main>
   );
+}
+
+/**
+ * Rede de segurança: um erro inesperado numa tela mostra um aviso com "Voltar", em vez de a página
+ * inteira sumir (o React desmonta tudo quando um erro não é tratado). Os dados já gravados no
+ * servidor não se perdem; só o que estava sendo digitado e ainda não foi salvo.
+ */
+class ProtecaoDeErro extends Component<{ children: ReactNode }, { erro: boolean; chave: number }> {
+  state = { erro: false, chave: 0 };
+  static getDerivedStateFromError() {
+    return { erro: true };
+  }
+  componentDidCatch(e: unknown) {
+    console.error("Erro na tela", e);
+  }
+  render() {
+    if (!this.state.erro) return <div key={this.state.chave} style={{ display: "contents" }}>{this.props.children}</div>;
+    return (
+      <main style={{ marginLeft: 0, display: "grid", placeItems: "center", minHeight: "100vh", padding: 16 }}>
+        <section className="panel" style={{ maxWidth: 480, textAlign: "center", margin: 0 }}>
+          <h2>Algo deu errado nesta tela</h2>
+          <p>Os dados já salvos continuam guardados. O que estava sendo digitado e não foi salvo precisa ser preenchido de novo.</p>
+          <button className="linkb" type="button" onClick={() => this.setState((s) => ({ erro: false, chave: s.chave + 1 }))}>
+            Voltar
+          </button>
+        </section>
+      </main>
+    );
+  }
 }
 
 function iniciarSincronizacao(): void {
@@ -64,7 +93,9 @@ async function iniciar(): Promise<void> {
   iniciarSincronizacao();
   raiz.render(
     <StrictMode>
-      <App usuario={usuario} />
+      <ProtecaoDeErro>
+        <App usuario={usuario} />
+      </ProtecaoDeErro>
     </StrictMode>,
   );
 }
