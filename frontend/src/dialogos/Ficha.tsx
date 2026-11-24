@@ -25,11 +25,15 @@ import {
 import {
   apagarEmbarque,
   corrigirEmbarque,
+  diasIda,
+  diasVolta,
   erroCorrecao,
+  etapas,
   etapasPeriodo,
   nomeBarco,
   periodos,
   pessoa,
+  registrarPeriodo,
   situacaoPeriodo,
   TI_PADRAO,
   TV_PADRAO,
@@ -141,7 +145,10 @@ const formCorrecao = (x: Periodo): FormCorrecao => {
   return { data: diaIso(x.ini), dias: String(x.dias), dobra: String(x.dobra || 0), ida: diaIso(e.ida), volta: diaIso(e.volta), barco: x.boat != null ? String(x.boat) : "" };
 };
 
-/** Muda um campo da correção; ao mudar a data de embarque, os translados acompanham (mesma distância). */
+/**
+ * Muda um campo da correção. Ao mudar a data de embarque, os translados acompanham (mesma distância);
+ * ao mudar dias a bordo ou dobra, o translado de volta acompanha o novo último dia a bordo.
+ */
 function mudarCorrecao(c: FormCorrecao, k: keyof FormCorrecao, v: string): FormCorrecao {
   const n = { ...c, [k]: v };
   if (k === "data" && c.data && v) {
@@ -150,6 +157,11 @@ function mudarCorrecao(c: FormCorrecao, k: keyof FormCorrecao, v: string): FormC
       if (c.ida) n.ida = diaIso(toDay(c.ida) + d);
       if (c.volta) n.volta = diaIso(toDay(c.volta) + d);
     }
+  }
+  if ((k === "dias" || k === "dobra") && c.volta) {
+    const bordo = (x: FormCorrecao) => (Number(x.dias) || 0) + (Number(x.dobra) || 0);
+    const d = bordo(n) - bordo(c);
+    if (Number.isFinite(d) && d) n.volta = diaIso(toDay(c.volta) + d);
   }
   return n;
 }
@@ -181,24 +193,26 @@ function lerCorrecao(c: FormCorrecao): CorrecaoEmbarque {
  * a correção é gravada na hora e fica na auditoria do servidor com o valor antigo e o novo.
  */
 function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined; aoAlterar: () => void }) {
-  const [editando, setEditando] = useState<number | null>(null);
+  const [editando, setEditando] = useState<Periodo | null>(null);
   const [fc, setFc] = useState<FormCorrecao | null>(null);
   const [erroC, setErroC] = useState("");
   const [apagando, setApagando] = useState<number | null>(null);
   if (!p) return <p className="empty">Salve o colaborador para ver os embarques.</p>;
   if (p.embark == null) return <p className="empty">Sem escala definida.</p>;
-  const per = periodos(p, S.hist, T + 120);
-  if (!per.length) return <p className="empty">Nenhum embarque registrado.</p>;
+  // só os embarques já iniciados (a partir do translado de ida) e os registrados: sem previsão futura
+  const per = periodos(p, S.hist, T).filter((x) => x.src === "Registrado" || etapasPeriodo(x).ida <= T);
+  if (!per.length) return <p className="empty">Nenhum embarque iniciado. O primeiro começa em {fmt(etapas(p.embark, (p.dias || 0) + (p.dobra || 0), diasIda(p), diasVolta(p)).ida)} (translado de ida).</p>;
   const admin = perfil.admin;
   const registrados = per.filter((x) => x.src === "Registrado").length;
   const cols = admin ? 7 : 6;
 
-  const abrir = (x: Periodo) => {
+  /** Abre a edição de um embarque; `foco`: campo que recebe o cursor ("#cedobra" no botão Dobra). */
+  const abrir = (x: Periodo, foco = "#cedata") => {
     setApagando(null);
     setErroC("");
-    setEditando(x.ini);
+    setEditando(x);
     setFc(formCorrecao(x));
-    mostrarEdicao("#cedata");
+    mostrarEdicao(foco);
   };
   const fechar = () => {
     setEditando(null);
@@ -208,12 +222,16 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
   const salvar = () => {
     if (editando == null || !fc) return;
     const c = lerCorrecao(fc);
-    const er = erroCorrecao(S, p.id, editando, c);
+    const er = erroCorrecao(S, p.id, editando.ini, c);
     if (er) return setErroC(er);
-    loja.mutar((E) => corrigirEmbarque(E, p.id, editando, c));
+    // embarque lançado pela escala da ficha (ainda não registrado): registra e depois corrige
+    loja.mutar((E) => {
+      registrarPeriodo(E, p.id, editando);
+      return corrigirEmbarque(E, p.id, editando.ini, c);
+    });
     fechar();
     aoAlterar();
-    toast("Embarque corrigido.");
+    toast(c.dobra !== editando.dobra && c.ini === editando.ini && c.dias === editando.dias ? "Dobra registrada." : "Embarque corrigido.");
   };
   const apagar = (ini: number) => {
     const ok = loja.mutar((E) => apagarEmbarque(E, p.id, ini));
@@ -252,14 +270,14 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
             ord = i + 1 + "º";
           return (
             <Fragment key={i}>
-              <tr className={(editando === x.ini || apagando === x.ini) && reg ? "emb-ed" : undefined}>
+              <tr className={editando?.ini === x.ini || (apagando === x.ini && reg) ? "emb-ed" : undefined}>
                 <td>
                   <b>{ord}</b>
                 </td>
                 <td>
                   {fmt(x.ini) + " a " + fmt(e.ultimoBordo)}
                   <div className="mute">
-                    {x.src + " · translado " + fmt(e.ida) + (e.volta > e.ultimoBordo ? " e " + fmt(e.volta) : "")}
+                    {(reg ? "Registrado" : "Pela escala") + " · translado " + fmt(e.ida) + (e.volta > e.ultimoBordo ? " e " + fmt(e.volta) : "")}
                   </div>
                 </td>
                 <td>
@@ -283,11 +301,14 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
                 </td>
                 {admin ? (
                   <td className="emb-acoes">
+                    <button type="button" className="ghost emb-dobra" title="Adicionar ou ajustar a dobra deste embarque" aria-label={"Dobra do " + ord + " embarque"} onClick={() => abrir(x, "#cedobra")}>
+                      Dobra
+                    </button>
+                    <button type="button" className="clip" title="Editar embarque" aria-label={"Editar o " + ord + " embarque"} onClick={() => abrir(x)}>
+                      <IcLapis />
+                    </button>
                     {reg ? (
                       <>
-                        <button type="button" className="clip" title="Corrigir embarque" aria-label={"Corrigir o " + ord + " embarque"} onClick={() => abrir(x)}>
-                          <IcLapis />
-                        </button>
                         <button
                           type="button"
                           className="clip emb-apagar"
@@ -322,10 +343,10 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
                   </td>
                 </tr>
               ) : null}
-              {admin && reg && editando === x.ini && fc ? (
+              {admin && editando?.ini === x.ini && fc ? (
                 <tr className="emb-ed">
                   <td colSpan={cols}>
-                    <h4 className="fh4">{"Corrigir o " + ord + " embarque"}</h4>
+                    <h4 className="fh4">{"Editar o " + ord + " embarque"}</h4>
                     <div className="emb-form">
                       {campo("data", "Data de embarque", "date")}
                       {campo("dias", "Dias a bordo", "number")}
@@ -346,7 +367,11 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
                         </div>
                       </div>
                     </div>
-                    <p className="mute emb-nota">A correção é gravada na hora e fica registrada (quem alterou, quando, antes e depois).</p>
+                    <p className="mute emb-nota">
+                      {"Dobra: dias extras a bordo, somados ao fim do embarque (geram 1 dia de folga cada). " +
+                        (reg ? "" : "Este embarque veio da escala da ficha: ao salvar, ele passa a ser registrado. ") +
+                        "A alteração é gravada na hora e fica registrada (quem alterou, quando, antes e depois)."}
+                    </p>
                     <div className="emb-conf">
                       <p className="ferr" role="alert">
                         {erroC}
@@ -355,7 +380,7 @@ function EmbarquesFicha({ S, p, aoAlterar }: { S: Estado; p: Pessoa | undefined;
                         Cancelar
                       </button>
                       <button type="button" onClick={salvar}>
-                        Salvar correção
+                        Salvar
                       </button>
                     </div>
                   </td>

@@ -83,6 +83,13 @@ A folga não gozada é compensada mais à frente, conforme o cronograma do proje
 - Se o embarque corrigido ou apagado for o mais recente, a escala do colaborador passa a seguir o registrado mais recente e os embarques previstos são recalculados.
 - O servidor descarta a correção vinda de quem não é Admin RH e registra na auditoria cada correção (quem, quando, antes e depois) e cada tentativa bloqueada.
 
+### Embarques na ficha do colaborador
+
+- A lista mostra só os embarques **já iniciados** (a partir do translado de ida) e os registrados; a previsão dos próximos embarques não aparece na ficha (continua sendo usada no Painel, na Equipe hoje e nos avisos).
+- Cada embarque tem **Dobra** (abre a edição com o cursor na dobra) e o **lápis** (editar). Os embarques que vieram só dos campos da escala ("Pela escala") também podem ser editados: ao salvar, passam a ser registrados com os mesmos dados.
+- Ao mudar dias a bordo ou dobra, o translado de volta acompanha o novo último dia a bordo (mesma distância).
+- **Mudar a data nos campos da escala da ficha:** se a nova data cair dentro do embarque atual (até o translado de volta), é uma correção dele e o registro é atualizado; se for depois do fim do embarque atual, é um novo embarque (o anterior fica no histórico). Ao salvar a ficha, o embarque atual sempre fica registrado.
+
 ## Validade de cursos e exames
 
 A data de validade é o último dia válido.

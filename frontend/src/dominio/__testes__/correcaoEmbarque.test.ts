@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toDay } from "../datas";
-import { apagarEmbarque, corrigirEmbarque, erroCorrecao, periodos } from "../escala";
+import { apagarEmbarque, corrigirEmbarque, erroCorrecao, etapasPeriodo, periodos, registrarPeriodo } from "../escala";
 import { estadoVazio, type Estado } from "../tipos";
 
 const D = (s: string) => toDay(s);
@@ -47,5 +47,43 @@ describe("correção de embarques registrados (Admin RH)", () => {
     expect(S.people[0].embark).toBe(D("2026-02-06"));
     expect(apagarEmbarque(S, 1, D("2026-02-06"))).toBe(false);
     expect(S.hist).toHaveLength(1);
+  });
+});
+
+describe("embarques pela escala da ficha (sem registro) — dobra e edição", () => {
+  // colaboradora lançada só pelos campos da escala na ficha: nenhum embarque no histórico
+  function soFicha(): Estado {
+    const S = estadoVazio();
+    S.people.push({ id: 2, name: "Bia", setor: "ambiental", embark: D("2026-09-29"), dias: 42, dobra: 0, base: 42, boat: null } as never);
+    return S;
+  }
+  const hoje = D("2026-11-24");
+  it("a lista da ficha não mostra previsão futura: só o que já começou", () => {
+    const S = soFicha();
+    const per = periodos(S.people[0], S.hist, hoje).filter((x) => x.src === "Registrado" || etapasPeriodo(x).ida <= hoje);
+    expect(per.map((x) => x.ini)).toEqual([D("2026-09-29")]);
+  });
+  it("dar dobra num embarque da escala: registra o embarque e grava a dobra", () => {
+    const S = soFicha();
+    const x = periodos(S.people[0], S.hist, hoje)[0];
+    expect(x.src).toBe("Previsto");
+    expect(erroCorrecao(S, 2, x.ini, c("2026-09-29", 42, 7))).toBeNull();
+    expect(registrarPeriodo(S, 2, x)).toBe(true);
+    corrigirEmbarque(S, 2, x.ini, c("2026-09-29", 42, 7));
+    expect(S.hist).toEqual([{ pid: 2, ini: D("2026-09-29"), dias: 42, dobra: 7, boat: null, ti: 1, tv: 0 }]);
+    expect(S.people[0]).toMatchObject({ embark: D("2026-09-29"), dias: 42, dobra: 7 });
+    // registrar de novo o mesmo embarque não duplica
+    expect(registrarPeriodo(S, 2, { ...x, dobra: 7 })).toBe(false);
+    expect(S.hist.length).toBe(1);
+  });
+  it("um ciclo da escala que já passou também pode ser editado (vira registrado)", () => {
+    const S = soFicha();
+    const ciclos = periodos(S.people[0], S.hist, D("2027-01-10")).filter((x) => etapasPeriodo(x).ida <= D("2027-01-10"));
+    expect(ciclos.length).toBe(2);
+    registrarPeriodo(S, 2, ciclos[0]);
+    registrarPeriodo(S, 2, ciclos[1]);
+    corrigirEmbarque(S, 2, ciclos[1].ini, c("2026-12-24", 42, 2));
+    expect(S.hist.map((h) => h.ini)).toEqual([D("2026-09-29"), D("2026-12-24")]);
+    expect(S.people[0]).toMatchObject({ embark: D("2026-12-24"), dobra: 2 });
   });
 });

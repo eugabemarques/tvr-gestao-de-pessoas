@@ -223,6 +223,18 @@ const maisRecente = (S: Estado, pid: number): number | null => {
   return l.length ? Math.max(...l) : null;
 };
 
+/**
+ * Garante que o embarque do período esteja registrado no histórico. Embarques lançados pelos campos
+ * da escala na ficha, ou ciclos da escala que já começaram, ainda não estão: ao corrigi-los ou dar
+ * dobra pela ficha, viram registrados com os mesmos dados. Devolve true se registrou agora.
+ */
+export function registrarPeriodo(S: Estado, pid: number, x: Periodo): boolean {
+  S.hist = S.hist || [];
+  if (S.hist.some((h) => h.pid === pid && h.ini === x.ini)) return false;
+  S.hist.push({ pid, ini: x.ini, dias: x.dias, dobra: x.dobra, boat: x.boat ?? null, ti: x.ti, tv: x.tv });
+  return true;
+}
+
 /** Corrige um embarque já registrado (só Admin RH; muda o estado recebido). */
 export function corrigirEmbarque(S: Estado, pid: number, iniAntigo: number, c: CorrecaoEmbarque): Pessoa | undefined {
   const p = pessoa(S, pid);

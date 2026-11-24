@@ -135,6 +135,23 @@ describe("gravar colaborador", () => {
     salvarColab(S, 1, valido({ setor: "administrativo" }), [], []);
     expect(S.people[0]).toMatchObject({ embark: null, dias: null, dobra: 0 });
   });
+  it("mudar a data na ficha: dentro do embarque atual corrige; depois do fim, vira novo embarque", () => {
+    const S = estadoVazio();
+    const p = salvarColab(S, null, valido({ setor: "ambiental", data: "2026-09-29", dias: "42" }), [], [], 5000);
+    expect(S.hist.map((h) => h.ini)).toEqual([toDay("2026-09-29")]);
+    // corrigiu a data (02/10 ainda está dentro do embarque de 29/09): o registro é atualizado
+    salvarColab(S, p.id, { ...formDe(S, p), data: "2026-10-02" }, [], [], 5000);
+    expect(S.hist).toEqual([{ pid: p.id, ini: toDay("2026-10-02"), dias: 42, dobra: 0, boat: null, ti: 1, tv: 0 }]);
+    // próximo embarque (depois do fim do atual): novo registro, o anterior fica
+    salvarColab(S, p.id, { ...formDe(S, p), data: "2026-12-26" }, [], [], 5000);
+    expect(S.hist.map((h) => h.ini)).toEqual([toDay("2026-10-02"), toDay("2026-12-26")]);
+    expect(S.people[0].embark).toBe(toDay("2026-12-26"));
+  });
+  it("ficha sem histórico (lançada antes): ao salvar, o embarque atual passa a ser registrado", () => {
+    const S: Estado = { ...estadoVazio(), people: [{ id: 1, name: "A", role: "", setor: "ambiental", embark: toDay("2026-09-29"), dias: 42, dobra: 0 }] };
+    salvarColab(S, 1, { ...formDe(S, S.people[0]) }, [], []);
+    expect(S.hist.map((h) => h.ini)).toEqual([toDay("2026-09-29")]);
+  });
   it("remover tira a pessoa e os cursos dela", () => {
     const S: Estado = { ...estadoVazio(), people: [{ id: 1, name: "A", role: "" }], courses: [{ pid: 1, name: "ASO", valid: T }] };
     removerColab(S, 1);

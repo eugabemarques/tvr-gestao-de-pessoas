@@ -1,6 +1,6 @@
 /** Validações e gravações dos cadastros (colaborador, barco, curso/ASO, avisos). */
 import { diaIso, toDay } from "./datas";
-import { barco, erroTranslado, novoId, pessoa, TI_PADRAO, TV_PADRAO } from "./escala";
+import { barco, diasIda, diasVolta, erroTranslado, etapas, novoId, pessoa, TI_PADRAO, TV_PADRAO } from "./escala";
 import { curCampo, setor, VACS, type LinhaCurso } from "./documentos";
 import { esc, unesc } from "./texto";
 import type { ChaveVacina, Documento, Estado, Pessoa } from "./tipos";
@@ -218,8 +218,11 @@ export function salvarColab(S: Estado, cedit: number | null, f: FormColab, docs:
     docs,
   };
   let p: Pessoa;
+  // embarque atual antes da edição (para levar a mudança de data ao histórico)
+  let anterior: { ini: number; volta: number } | null = null;
   if (cedit) {
     p = pessoa(S, cedit) as Pessoa;
+    if (p.embark != null) anterior = { ini: p.embark, volta: etapas(p.embark, (p.dias || 0) + (p.dobra || 0), diasIda(p), diasVolta(p)).volta };
     if (p.embark !== d.embark || p.dias !== d.dias) p.dobra = 0;
     Object.assign(p, d);
   } else {
@@ -237,11 +240,19 @@ export function salvarColab(S: Estado, cedit: number | null, f: FormColab, docs:
   }
   if (d.embark != null) {
     S.hist = S.hist || [];
+    const novo = { pid: p.id, ini: d.embark, dias: d.dias as number, dobra: p.dobra || 0, boat: d.boat, ti: p.ti, tv: p.tv };
     const h = S.hist.find((x) => x.pid === p.id && x.ini === d.embark);
+    const atual = anterior ? S.hist.find((x) => x.pid === p.id && x.ini === anterior!.ini) : undefined;
     if (h) {
-      h.ti = p.ti;
-      h.tv = p.tv;
-    } else if (!cedit) S.hist.push({ pid: p.id, ini: d.embark, dias: d.dias as number, dobra: 0, boat: d.boat, ti: p.ti, tv: p.tv });
+      // mesma data: atualiza dias, barco e translado do embarque registrado
+      Object.assign(h, { dias: novo.dias, dobra: novo.dobra, boat: novo.boat, ti: novo.ti, tv: novo.tv });
+    } else if (atual && anterior && d.embark <= anterior.volta) {
+      // nova data dentro do embarque atual (até o translado de volta): é uma correção dele
+      Object.assign(atual, novo);
+    } else {
+      // primeiro embarque, ou nova data depois do fim do atual: novo embarque (o anterior fica no histórico)
+      S.hist.push(novo);
+    }
   }
   const pf = p.id;
   S.courses = S.courses
