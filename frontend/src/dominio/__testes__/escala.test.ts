@@ -11,6 +11,7 @@ import {
   normalizar,
   periodos,
   previaDobra,
+  podeDarDobra,
   previaRegistro,
   registrarEmbarque,
   situacao,
@@ -248,5 +249,37 @@ describe("dados antigos e ids", () => {
   it("novo id usa o relógio no modo servidor", () => {
     expect(novoId([{ id: 5 }], 1000)).toBe(1000);
     expect(novoId([{ id: 5000 }], 1000)).toBe(5001);
+  });
+});
+
+describe("dobra durante a folga (Equipe hoje)", () => {
+  const D2 = (s: string) => toDay(s);
+  it("quem pode receber dobra: a bordo, translado de volta e folga", () => {
+    const p = P({ embark: D2("2026-11-17"), dias: 42, tv: 1 });
+    expect(podeDarDobra(cycle(p, D2("2026-11-15")))).toBe(false); // antes do 1º embarque
+    expect(podeDarDobra(cycle(p, D2("2026-11-16")))).toBe(false); // translado de ida
+    expect(podeDarDobra(cycle(p, D2("2026-11-20")))).toBe(true); // a bordo
+    expect(podeDarDobra(cycle(p, D2("2026-12-29")))).toBe(true); // translado de volta
+    expect(podeDarDobra(cycle(p, D2("2027-01-05")))).toBe(true); // folga
+  });
+  it("de folga no 1º ciclo: a dobra vai para o embarque que terminou e a folga é recalculada", () => {
+    const S: Estado = { ...estadoVazio(), people: [P({ id: 1, embark: D2("2026-09-29"), dias: 42 })] };
+    const hoje = D2("2026-11-24"); // folga desde 10/11
+    expect(cycle(S.people[0], hoje).st).toBe("rest");
+    adicionarDobra(S, 1, 5, hoje);
+    expect(S.people[0]).toMatchObject({ embark: D2("2026-09-29"), dobra: 5 });
+    const c = cycle(S.people[0], hoje);
+    // último dia a bordo 09/11 + 5 = 14/11; folga de 47 dias a partir de 15/11; hoje = 10º dia de folga
+    expect(c).toMatchObject({ st: "rest", day: 10, L: 47 });
+    expect(c.e.folgaFim).toBe(D2("2026-12-31"));
+  });
+  it("de folga num ciclo previsto: o ciclo vira registrado com a dobra", () => {
+    const S: Estado = { ...estadoVazio(), people: [P({ id: 1, embark: D2("2026-05-01"), dias: 42 })] };
+    const hoje = D2("2026-09-15"); // 2º ciclo: a bordo de 25/07 a 04/09, folga desde 05/09
+    const antes = cycle(S.people[0], hoje);
+    expect(antes).toMatchObject({ st: "rest", first: false });
+    adicionarDobra(S, 1, 3, hoje);
+    expect(S.people[0]).toMatchObject({ embark: antes.start, dias: 42, dobra: 3 });
+    expect(S.hist.at(-1)).toMatchObject({ ini: antes.start, dobra: 3 });
   });
 });

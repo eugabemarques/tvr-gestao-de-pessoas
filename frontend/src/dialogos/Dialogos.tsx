@@ -5,7 +5,7 @@ import { useAcoes } from "../acoes";
 import { avisoRemoverBarco, cadastrosIncompletos, marcarResolvido, removerBarco, removerCurso, salvarBarco, salvarCurso, tripulantesDoBarco, validarBarco, validarCurso } from "../dominio/cadastros";
 import { DATA_MAX, diaIso, fmt, toDay } from "../dominio/datas";
 import { ACEITOS, campos, campoToveri, CURSOS, docFor, docsDo, docsToveriDo, erroArq, fichaTexto, opcDoc, setor } from "../dominio/documentos";
-import { adicionarDobra, barco, cycle, pessoa, previaDobra } from "../dominio/escala";
+import { adicionarDobra, barco, cycle, pessoa, podeDarDobra, previaDobra } from "../dominio/escala";
 import { nomeArquivoFicha, porNome, unesc } from "../dominio/texto";
 import { ANOS_NORUEGUES, avisos, isAso, isNoruegues, NORUEGUES, validadeNoruegues } from "../dominio/validade";
 import type { Documento } from "../dominio/tipos";
@@ -148,7 +148,8 @@ function CorpoDobra({ id, aoFechar }: Fechar & { id: number }) {
   const S = useEstado();
   const [pid, setPid] = useState(String(id));
   const [dias, setDias] = useState("7");
-  const embarcados = porNome(S.people).filter((p) => p.embark != null && cycle(p, T).st === "aboard");
+  // a bordo, no translado de volta ou de folga: a dobra vai para o embarque do ciclo atual
+  const embarcados = porNome(S.people).filter((p) => p.embark != null && podeDarDobra(cycle(p, T)));
   const pidEf = embarcados.some((p) => String(p.id) === pid) ? pid : embarcados.length ? String(embarcados[0].id) : "";
   const p = pessoa(S, pidEf),
     n = Math.max(1, parseInt(dias) || 0);
@@ -163,14 +164,32 @@ function CorpoDobra({ id, aoFechar }: Fechar & { id: number }) {
     toast("Dobra de " + nd + " dias adicionada para " + unesc(p.name) + ".");
   };
   let res;
-  if (!p) res = <p className="empty">Nenhum colaborador está embarcado hoje.</p>;
+  if (!p) res = <p className="empty">Nenhum colaborador a bordo ou de folga hoje.</p>;
   else {
     const c = cycle(p, T),
       r = previaDobra(c, n);
     res = (
       <>
         <h3>{r.L2 + " dias a bordo"}</h3>
-        <p>{r.L + " dias do embarque atual + " + n + " de dobra. A folga passa a ser de " + r.L2 + " dias."}</p>
+        <p>
+          {r.L +
+            (c.st === "aboard" ? " dias do embarque atual" : " dias do embarque de " + fmt(c.start) + " a " + fmt(c.e.ultimoBordo)) +
+            " + " +
+            n +
+            " de dobra. A folga passa a ser de " +
+            r.L2 +
+            " dias."}
+        </p>
+        {c.st !== "aboard" ? (
+          <p className="mute" style={{ marginTop: -6 }}>
+            {"Hoje " + unesc(p.name) + " está " + (c.st === "rest" ? "de folga" : "no translado de volta") + ": a dobra vale para esse último embarque e a folga é recalculada a partir do novo último dia a bordo."}
+          </p>
+        ) : null}
+        {c.st !== "aboard" && r.ultimoBordo >= T ? (
+          <p className="ferr" role="alert">
+            {"Atenção: com " + n + " dias de dobra, o último dia a bordo (" + fmt(r.ultimoBordo) + ") passa de hoje e " + unesc(p.name) + " volta a aparecer como embarcado. Confira os dias."}
+          </p>
+        ) : null}
         <div className="facts">
           <div>
             <b>{fmt(r.ultimoBordo)}</b>
@@ -194,7 +213,7 @@ function CorpoDobra({ id, aoFechar }: Fechar & { id: number }) {
       <div className="reg">
         <div>
           <label>
-            Colaborador embarcado
+            Colaborador (a bordo ou de folga)
             <select id="dpessoa" value={pidEf} onChange={(e) => setPid(e.target.value)}>
               {embarcados.map((x) => (
                 <option key={x.id} value={x.id}>

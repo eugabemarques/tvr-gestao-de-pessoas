@@ -258,6 +258,13 @@ export function apagarEmbarque(S: Estado, pid: number, ini: number): boolean {
   return true;
 }
 
+/**
+ * Pode receber dobra: a bordo, no translado de volta ou de folga. A dobra vai para o embarque do ciclo
+ * atual (o que está em andamento ou acabou de terminar) e empurra o fim dele e a folga. No translado
+ * de ida ou antes do 1º embarque, não há embarque recente para receber dias a mais.
+ */
+export const podeDarDobra = (c: Ciclo): boolean => c.st === "aboard" || c.st === "rest" || (c.st === "transit" && c.sentido === "volta");
+
 /** Adiciona dias de dobra ao embarque atual (muda o estado recebido). */
 export function adicionarDobra(S: Estado, pid: number, n: number, T: number): Pessoa | undefined {
   const p = pessoa(S, pid);

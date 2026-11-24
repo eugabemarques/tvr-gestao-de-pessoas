@@ -83,6 +83,12 @@ A folga não gozada é compensada mais à frente, conforme o cronograma do proje
 - Se o embarque corrigido ou apagado for o mais recente, a escala do colaborador passa a seguir o registrado mais recente e os embarques previstos são recalculados.
 - O servidor descarta a correção vinda de quem não é Admin RH e registra na auditoria cada correção (quem, quando, antes e depois) e cada tentativa bloqueada.
 
+### Dobra pela tela Equipe hoje
+
+- O botão **Dobra** aparece para quem está **a bordo, no translado de volta ou de folga** (não para quem está no translado de ida, antes do 1º embarque ou de férias). Fica liberado para todo o RH.
+- A dobra vai para o embarque do ciclo atual (o que está em andamento ou acabou de terminar): o último dia a bordo avança e a folga é recalculada (1 dia de folga por dia de dobra). Se esse embarque era só previsto pela escala, passa a ser registrado com a dobra.
+- Se a dobra fizer o último dia a bordo passar de hoje para alguém que está de folga, a tela avisa (o colaborador voltaria a aparecer como embarcado).
+
 ### Embarques na ficha do colaborador
 
 - A lista mostra só os embarques **já iniciados** (a partir do translado de ida) e os registrados; a previsão dos próximos embarques não aparece na ficha (continua sendo usada no Painel, na Equipe hoje e nos avisos).

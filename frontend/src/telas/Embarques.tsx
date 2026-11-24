@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAcoes } from "../acoes";
 import { Chip } from "../componentes/Comuns";
 import { DATA_MAX, diaIso, fmt, iso, toDay } from "../dominio/datas";
-import { barco, cycle, dadosHistorico, emFerias, erroTranslado, nomeBarco, pessoa, previaRegistro, registrarEmbarque, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
+import { barco, cycle, dadosHistorico, emFerias, erroTranslado, nomeBarco, pessoa, podeDarDobra, previaRegistro, registrarEmbarque, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
 import { pdfHistorico, planilhaHistorico } from "../dominio/exportacao";
 import { porNome, unesc } from "../dominio/texto";
 import { AGORA, loja, T, toast, useEstado } from "../loja";
@@ -325,7 +325,7 @@ export function EquipeHoje({ oculto }: { oculto: boolean }) {
                     <div className="mute">{"em " + c.days + " dias"}</div>
                   </td>
                   <td>
-                    {c.st === "aboard" && !fe ? (
+                    {podeDarDobra(c) && !fe ? (
                       <button className="ghost" onClick={() => abrirDobra(p.id)}>
                         Dobra
                       </button>
