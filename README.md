@@ -51,7 +51,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 - Cadastro de curso ou exame com validade e certificado anexado. No **Norueguês**, informa-se a data do exame e a validade é calculada sozinha (2 anos depois), podendo ser ajustada.
 
 **Colaboradores**
-- Lista com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes.
+- Lista em ordem alfabética com busca, situação (embarcado, folga ou férias), situação dos cursos e documentos pendentes. Mostra **10 colaboradores por página**, com os botões Anterior, número da página e Próxima e o aviso "Mostrando 1–10 de N colaboradores"; a busca procura em todos e volta para a 1ª página.
 - Ficha dividida em seções: Dados pessoais, Cursos, Embarques, Vacinas e Docs Toveri. Pode ser salva incompleta (só o nome é obrigatório).
 - Vacinas: data de cada uma das três vacinas e **um único anexo** com os três comprovantes (fichas antigas com três arquivos separados continuam valendo).
 - Docs Toveri (só setores Ambiental e Administrativo; não aparece em Manutenção Offshore): só anexos, sem campos, das fichas internas anexadas depois da contratação: Dados Pessoais, Contato de Emergência, Dados Bancários, Autodeclaração de Raça e Política de Drogas e Álcool. São opcionais (não contam como pendência) e aparecem na pasta do colaborador e no dossiê.

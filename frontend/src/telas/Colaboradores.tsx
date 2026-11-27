@@ -4,9 +4,12 @@ import { useAcoes } from "../acoes";
 import { Chip, ChipPendencias, ChipSituacao, subSituacao } from "../componentes/Comuns";
 import { nomeSetor } from "../dominio/documentos";
 import { nomeBarco, situacao } from "../dominio/escala";
+import { botoesPagina, paginar } from "../dominio/paginacao";
 import { porNome, unesc } from "../dominio/texto";
 import { courseState } from "../dominio/validade";
 import { T, useEstado } from "../loja";
+
+const POR_PAGINA = 10;
 
 export function Colaboradores({ oculto }: { oculto: boolean }) {
   const S = useEstado();
@@ -14,7 +17,15 @@ export function Colaboradores({ oculto }: { oculto: boolean }) {
   const [busca, setBusca] = useState("");
   const q = busca.toLowerCase().trim();
   // em ordem alfabética (sem diferenciar acentos e maiúsculas: "Álvaro" vem junto de "Alvaro")
-  const rows = porNome(S.people).filter((p) => unesc(p.name + " " + p.role + " " + nomeBarco(S, p.boat)).toLowerCase().includes(q));
+  const todos = porNome(S.people).filter((p) => unesc(p.name + " " + p.role + " " + nomeBarco(S, p.boat)).toLowerCase().includes(q));
+  // 10 por página; a busca procura em todos e volta para a 1ª página
+  const [pag, setPag] = useState(1);
+  const pg = paginar(todos, pag, POR_PAGINA),
+    rows = pg.itens;
+  const irPara = (n: number) => {
+    setPag(n);
+    document.getElementById("t-co")?.scrollIntoView({ block: "nearest" });
+  };
 
   return (
     <section className="panel" aria-labelledby="t-co" hidden={oculto}>
@@ -30,7 +41,7 @@ export function Colaboradores({ oculto }: { oculto: boolean }) {
       </div>
       <label>
         Buscar
-        <input type="search" id="busca" placeholder="Nome, cargo ou barco" autoComplete="off" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <input type="search" id="busca" placeholder="Nome, cargo ou barco" autoComplete="off" value={busca} onChange={(e) => { setBusca(e.target.value); setPag(1); }} />
       </label>
       <div className="scroll">
         <table>
@@ -93,6 +104,41 @@ export function Colaboradores({ oculto }: { oculto: boolean }) {
           </tbody>
         </table>
       </div>
+      {pg.total ? (
+        <nav className="paginacao" aria-label="Páginas da lista de colaboradores">
+          <span className="mute" id="pg-info">
+            {pg.paginas > 1 ? `Mostrando ${pg.de}–${pg.ate} de ${pg.total} colaboradores` : `${pg.total} ${pg.total === 1 ? "colaborador" : "colaboradores"}`}
+          </span>
+          {pg.paginas > 1 ? (
+            <div className="row pg-botoes">
+              <button type="button" className="ghost" id="pg-ant" disabled={pg.pagina === 1} onClick={() => irPara(pg.pagina - 1)}>
+                ‹ Anterior
+              </button>
+              {botoesPagina(pg.pagina, pg.paginas).map((n, i) =>
+                n == null ? (
+                  <span key={"r" + i} className="mute" aria-hidden="true">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={n}
+                    type="button"
+                    className={n === pg.pagina ? "pg-num atual" : "ghost pg-num"}
+                    aria-current={n === pg.pagina ? "page" : undefined}
+                    aria-label={"Página " + n}
+                    onClick={() => irPara(n)}
+                  >
+                    {n}
+                  </button>
+                ),
+              )}
+              <button type="button" className="ghost" id="pg-prox" disabled={pg.pagina === pg.paginas} onClick={() => irPara(pg.pagina + 1)}>
+                Próxima ›
+              </button>
+            </div>
+          ) : null}
+        </nav>
+      ) : null}
     </section>
   );
 }
