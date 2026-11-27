@@ -64,6 +64,13 @@ describe("faixas de validade", () => {
     expect(cursos.na[1].map((c) => c.pid)).toEqual([2]);
     expect(cursos.cv[1]).toEqual([]);
   });
+  it("ASO e Norueguês a vencer contam até 90 dias, como os cursos", () => {
+    const ex = (pid: number, name: string, d: number) => ({ pid, name, valid: T + d });
+    const S = { ...estadoVazio(), courses: [ex(1, NORUEGUES, 89), ex(2, NORUEGUES, 90), ex(3, NORUEGUES, 91), ex(4, "ASO", 75), ex(5, "ASO", 91)] };
+    const { cursos } = gruposPainel(S, T);
+    expect(cursos.na[1].map((c) => c.pid)).toEqual([1, 2]);
+    expect(cursos.aa[1].map((c) => c.pid)).toEqual([4]);
+  });
   it("altura das colunas do gráfico", () => {
     expect(alturaBarra(0, 4)).toBe(6);
     expect(alturaBarra(4, 4)).toBe(120);

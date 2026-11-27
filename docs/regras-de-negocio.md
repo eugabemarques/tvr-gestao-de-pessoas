@@ -100,7 +100,7 @@ A folga não gozada é compensada mais à frente, conforme o cronograma do proje
 
 A data de validade é o último dia válido.
 
-**Exames** (ASO e Norueguês / OEUK / ENG1) ficam separados dos cursos: têm quadro próprio na tela Cursos, cartões próprios no Painel e as faixas do ASO (vencido, até 60 dias, 61 a 90 dias, em dia).
+**Exames** (ASO e Norueguês / OEUK / ENG1) ficam separados dos cursos: têm quadro próprio na tela Cursos, cartões próprios no Painel e as faixas do ASO (vencido, até 60 dias, 61 a 90 dias, em dia). No Painel, os cartões "ASOs a vencer" e "Norueguês a vencer" contam quem vence em **até 90 dias** (as duas faixas juntas), como os cursos.
 
 **Norueguês / OEUK / ENG1**: exame médico offshore com validade de **2 anos**. O RH informa a data do exame e a validade é calculada sozinha (mesmo dia, 2 anos depois; exame em 29/02 vence em 28/02). A validade continua editável. No back end: `TipoCurso.EhExame` e `MesesDeValidade` = 24; a data fica em `CursoColaborador.DataExame` (nas telas, `exame`).
 

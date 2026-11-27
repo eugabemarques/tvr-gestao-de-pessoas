@@ -132,9 +132,10 @@ export function gruposPainel(S: Estado, T: number) {
     c60: ["Cursos que vencem em até 60 dias", C.filter((c) => dd(c) >= 0 && dd(c) <= 60)],
     c90: ["Cursos que vencem entre 61 e 90 dias", C.filter((c) => dd(c) > 60 && dd(c) <= 90)],
     av: ["ASOs vencidos", A.filter((c) => dd(c) < 0)],
-    aa: ["ASOs a vencer (até 60 dias)", A.filter((c) => dd(c) >= 0 && dd(c) <= 60)],
+    // exames a vencer: até 90 dias, como os cursos e o quadro da tela Cursos (faixas de 60 e de 61 a 90 dias)
+    aa: ["ASOs a vencer (até 90 dias)", A.filter((c) => dd(c) >= 0 && dd(c) <= 90)],
     nv: ["Norueguês vencidos", N.filter((c) => dd(c) < 0)],
-    na: ["Norueguês a vencer (até 60 dias)", N.filter((c) => dd(c) >= 0 && dd(c) <= 60)],
+    na: ["Norueguês a vencer (até 90 dias)", N.filter((c) => dd(c) >= 0 && dd(c) <= 90)],
   };
   return { cy, pessoas, cursos };
 }
