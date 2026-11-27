@@ -4,7 +4,7 @@ import { useAcoes } from "../acoes";
 import { Chip } from "../componentes/Comuns";
 import { DATA_MAX, diaIso, fmt, iso, toDay } from "../dominio/datas";
 import { barco, cycle, dadosHistorico, emFerias, erroTranslado, nomeBarco, pessoa, podeDarDobra, previaRegistro, registrarEmbarque, TI_PADRAO, TV_PADRAO } from "../dominio/escala";
-import { pdfHistorico, planilhaHistorico } from "../dominio/exportacao";
+import { planilhaHistorico } from "../dominio/exportacao";
 import { porNome, unesc } from "../dominio/texto";
 import { AGORA, loja, T, toast, useEstado } from "../loja";
 import { baixar } from "../servidor/api";
@@ -178,27 +178,15 @@ export function Historico({ oculto }: { oculto: boolean }) {
   };
 
   const pdf = async () => {
-    let J: typeof import("jspdf").jsPDF;
+    let arq: Blob;
     try {
-      J = (await import("jspdf")).jsPDF;
+      const { gerarHistoricoPdf } = await import("../dialogos/historicoPdf");
+      arq = await gerarHistoricoPdf(S, dados(), T, hde ? toDay(hde) : null, hate ? toDay(hate) : T);
     } catch {
       toast("A biblioteca de PDF não carregou. Verifique a conexão.");
       return;
     }
-    const doc = new J({ unit: "mm", format: "a4" });
-    let y = 18;
-    pdfHistorico(S, dados(), T).forEach((l) => {
-      y += l.antes || 0;
-      if (y > 280) {
-        doc.addPage();
-        y = 18;
-      }
-      doc.setFontSize(l.sz);
-      doc.setFont("helvetica", l.b ? "bold" : "normal");
-      doc.text(l.t, l.x, y);
-      y += l.sz > 12 ? 8 : 6;
-    });
-    baixar("historico-embarques.pdf", doc.output("blob"), () => toast("Não foi possível baixar o arquivo."));
+    baixar("historico-embarques.pdf", arq, () => toast("Não foi possível baixar o arquivo."));
   };
 
   return (

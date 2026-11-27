@@ -40,7 +40,7 @@ Sistema de RH para controlar a escala de embarque, as dobras, o vencimento de cu
 - Registro de embarque (tela Embarques): só colaborador, barco, translado de ida e data de embarque. Os dias a bordo seguem a escala do colaborador e a volta fica no último dia a bordo; a tela mostra a folga conquistada e as datas de translado e embarque. Dias, dobra e volta diferentes se ajustam na ficha do colaborador, aba Embarques.
 - Tabela "Equipe hoje" com a situação de cada pessoa e o ponto em que está no ciclo.
 - Botão **Dobra** para somar dias a um embarque em andamento.
-- Histórico por colaborador e período, com exportação para Excel e PDF.
+- Histórico por colaborador e período, com exportação para Excel e PDF. O PDF (A4, dentro das margens) traz o logo da TOVERI, o nome de cada colaborador em destaque com setor e função, os totais do período (dias a bordo, dobra, translado, trabalhados e folga) e uma tabela com um embarque por linha (barco, translados, dias a bordo, dobra, folga e origem); os embarques "Pela escala" aparecem em cinza e, se a tabela passar de página, o cabeçalho se repete.
 
 **Barcos**
 - Cadastro de barcos (nome, tipo e observações).

@@ -3,14 +3,14 @@ import { fmt } from "../dominio/datas";
 import { fichaPdf } from "../dominio/exportacao";
 import type { Estado, Pessoa } from "../dominio/tipos";
 
-const AZUL: [number, number, number] = [16, 74, 140];
-const CINZA: [number, number, number] = [110, 116, 128];
-const TEXTO: [number, number, number] = [30, 34, 40];
+export const AZUL: [number, number, number] = [16, 74, 140];
+export const CINZA: [number, number, number] = [110, 116, 128];
+export const TEXTO: [number, number, number] = [30, 34, 40];
 const ALERTA: [number, number, number] = [176, 104, 0];
 const VERDE: [number, number, number] = [22, 128, 61];
 
 /** Logo como data URL (ou null se não carregar: o PDF sai sem logo). */
-async function logo(): Promise<{ url: string; w: number; h: number } | null> {
+export async function logo(): Promise<{ url: string; w: number; h: number } | null> {
   try {
     const b = await (await fetch("/logo-cor.png")).blob();
     const url = await new Promise<string>((ok, erro) => {

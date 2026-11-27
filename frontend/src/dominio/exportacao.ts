@@ -75,41 +75,46 @@ export function planilhaHistorico(S: Pick<Estado, "boats">, R: Calculo[]): [stri
   ];
 }
 
-export interface LinhaPdf {
-  t: string;
-  x: number;
-  sz: number;
-  b: boolean;
-  /** Espaço extra antes desta linha (mm). */
-  antes?: number;
+/** Bloco de um colaborador no PDF do histórico. */
+export interface BlocoHistoricoPdf {
+  nome: string;
+  /** Setor e função. */
+  sub: string;
+  /** "01/01/2026 a 31/03/2026". */
+  intervalo: string;
+  /** [rótulo, valor] dos totais do intervalo. */
+  resumo: [string, string][];
+  /** Uma linha por embarque, nas colunas de `COLUNAS_HISTORICO_PDF`. */
+  linhas: string[][];
 }
 
-/** Linhas do PDF do histórico, com posição x, tamanho da fonte e negrito. */
-export function pdfHistorico(S: Pick<Estado, "boats">, R: Calculo[], T: number): LinhaPdf[] {
-  const out: LinhaPdf[] = [
-    { t: "TOVERI - Gestão de Pessoas", x: 14, sz: 16, b: true },
-    { t: "Histórico de embarques e folgas", x: 14, sz: 12, b: false },
-    { t: "Gerado em " + fmt(T), x: 14, sz: 9, b: false },
-  ];
-  let antes = 4;
-  R.forEach((r) => {
-    out.push({ t: unesc(r.p.name) + "  |  " + fmt(r.de) + " a " + fmt(r.ate), x: 14, sz: 11, b: true, antes });
-    out.push({ t: "Dias a bordo: " + r.ab + "   Dobra: " + r.dob + "   Translado: " + r.tr + "   Trabalhados: " + (r.ab + r.tr) + "   Dias de folga: " + r.fo, x: 14, sz: 10, b: false });
-    r.per.forEach((x) => {
-      const e = etapasPeriodo(x),
-        bn = nomeBarco(S, x.boat);
-      out.push({
-        t:
-          (bn ? unesc(bn) + ": " : "") +
-          "translado " + fmt(e.ida) + "  |  " + fmt(x.ini) + " a " + fmt(e.ultimoBordo) + " a bordo (" + e.A + " dias" + (x.dobra ? ", dobra " + x.dobra : "") + ")" +
-          (e.volta > e.ultimoBordo ? "  |  volta " + fmt(e.volta) : "") +
-          "  |  folga " + fmt(e.folgaIni) + " a " + fmt(e.folgaFim) + "  [" + x.src + "]",
-        x: 18,
-        sz: 9,
-        b: false,
-      });
-    });
-    antes = 3;
-  });
-  return out;
+export const COLUNAS_HISTORICO_PDF = ["Barco", "Translado de ida", "A bordo", "Dias", "Dobra", "Translado de volta", "Folga", "Origem"];
+
+/** Conteúdo do PDF do histórico: um bloco por colaborador, com os totais e a tabela de embarques. */
+export function pdfHistorico(S: Pick<Estado, "boats">, R: Calculo[]): BlocoHistoricoPdf[] {
+  return R.map((r) => ({
+    nome: unesc(r.p.name) || "Sem nome",
+    sub: [nomeSetor(r.p.setor), unesc(r.p.role || "")].filter(Boolean).join(" · "),
+    intervalo: fmt(r.de) + " a " + fmt(r.ate),
+    resumo: [
+      ["Dias a bordo", String(r.ab)],
+      ["Dobra", String(r.dob)],
+      ["Translado", String(r.tr)],
+      ["Trabalhados", String(r.ab + r.tr)],
+      ["Folga", String(r.fo)],
+    ],
+    linhas: r.per.map((x) => {
+      const e = etapasPeriodo(x);
+      return [
+        unesc(nomeBarco(S, x.boat)) || "—",
+        fmt(e.ida),
+        fmt(x.ini) + " a " + fmt(e.ultimoBordo),
+        String(e.A),
+        x.dobra ? String(x.dobra) : "—",
+        fmt(e.volta),
+        fmt(e.folgaIni) + " a " + fmt(e.folgaFim),
+        x.src === "Registrado" ? "Registrado" : "Pela escala",
+      ];
+    }),
+  }));
 }
